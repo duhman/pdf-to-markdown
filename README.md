@@ -1,52 +1,28 @@
 # PDF to Markdown Converter
 
-A FastAPI-based application that converts PDF invoices in Norwegian and English into structured markdown documents using OCR technology.
+A FastAPI application that converts PDF invoices to structured markdown documents using OCR technology. Supports both Norwegian and English invoices.
 
 ## Features
 
-- PDF to text conversion using OCR (Optical Character Recognition)
-- Support for both Norwegian and English invoices
+### Core Features
+- Convert PDF invoices to structured markdown
+- Multi-language support (Norwegian and English)
 - Automatic language detection
-- Structured markdown output with key invoice fields
-- RESTful API endpoint for easy integration
+- RESTful API interface
 
-## Prerequisites
-
-### System Dependencies
-
-1. Tesseract OCR:
-
-```bash
-brew install tesseract
-brew install tesseract-lang  # For Norwegian language support
-```
-
-1. Poppler (for PDF processing):
-
-```bash
-brew install poppler
-```
-
-1. ImageMagick (for image processing):
-
-```bash
-brew install imagemagick
-```
-
-### Python Dependencies
-
-- Python 3.x
-- Virtual Environment
-- Required packages (installed via requirements.txt):
-  - FastAPI
-  - Uvicorn
-  - Python-Multipart
-  - PDF2Image
-  - Pytesseract
-  - Langdetect
-  - Markdown
-  - Pydantic
-  - Python-Dotenv
+### Advanced Features
+- Smart field extraction and validation
+  - Norwegian organization number (MVA) validation
+  - KID number validation
+  - Currency formatting
+  - Phone number formatting
+- Table detection and extraction
+- Multiple output formats (Markdown, JSON, XML)
+- Enhanced OCR processing
+  - Multiple preprocessing methods
+  - Layout detection
+  - OCR error correction
+  - Table structure recognition
 
 ## Installation
 
@@ -57,14 +33,18 @@ git clone https://github.com/duhman/pdf-to-markdown.git
 cd pdf-to-markdown
 ```
 
-1. Create and activate a virtual environment:
+2. Install system dependencies:
 
 ```bash
-python3 -m venv venv
-source venv/bin/activate
+# Ubuntu/Debian
+sudo apt-get update
+sudo apt-get install -y tesseract-ocr tesseract-ocr-nor poppler-utils imagemagick
+
+# macOS
+brew install tesseract tesseract-lang poppler imagemagick
 ```
 
-1. Install Python dependencies:
+3. Install Python dependencies:
 
 ```bash
 pip install -r requirements.txt
@@ -72,54 +52,81 @@ pip install -r requirements.txt
 
 ## Usage
 
-1. Start the FastAPI server:
+1. Start the server:
 
 ```bash
-python -m uvicorn app.main:app --reload
+uvicorn app.main:app --reload
 ```
 
-1. The API will be available at `http://localhost:8000`
-
-1. To convert a PDF to markdown, send a POST request to `/convert` endpoint with the PDF file:
+2. Convert a PDF invoice:
 
 ```bash
-curl -X POST -F "file=@your_invoice.pdf" http://localhost:8000/convert
+curl -X POST "http://localhost:8000/convert" \
+     -H "accept: application/json" \
+     -H "Content-Type: multipart/form-data" \
+     -F "file=@invoice.pdf" \
+     -F "output_format=markdown"  # or 'json' or 'xml'
 ```
-
-## API Endpoints
-
-- `POST /convert`: Convert PDF invoice to markdown
-  - Input: PDF file (multipart/form-data)
-  - Output: JSON response with markdown content and detected language
 
 Example response:
-
 ```json
 {
-  "markdown": "# Invoice Details\n\n## Invoice Number\nINV-001\n\n## Date\n2024-01-26\n\n## Total Amount\n$100.00\n\n## VAT\n$20.00",
-  "detected_language": "en"
+  "markdown": "# Invoice Details\n\n## Company Registration\nNO 923 930 892 MVA\n\n## Invoice Number\n1122\n\n## Date\n2024-11-19\n\n## Due Date\n2024-12-19\n\n## Contact Person\nTim Robin Frick\n\n## Total Amount\n5 000,00 kr\n\n## Tax\n1 250,00 kr\n\n## Payment Information\nBank Account: 1506.61.77553\nReference: 0112219\n\n## Line Items\n| Description | Amount | Tax | Total |\n|-------------|--------|-----|--------|\n| Timer | 5 000,00 | 1 250,00 | 6 250,00 |",
+  "detected_language": "no"
 }
 ```
 
-## Project Structure
+## Development
 
-```plaintext
-pdf-to-markdown/
-├── app/
-│   ├── __init__.py
-│   ├── main.py              # FastAPI application and routes
-│   ├── pdf_processor.py     # PDF processing and OCR logic
-│   └── markdown_generator.py # Markdown generation logic
-├── requirements.txt         # Python dependencies
-└── README.md               # Project documentation
+### Running Tests
+
+```bash
+# Run all tests
+pytest tests/
+
+# Run specific test types
+pytest tests/unit/  # Unit tests
+pytest tests/integration/  # Integration tests
+pytest tests/performance/  # Performance tests
+pytest tests/property/  # Property-based tests
+
+# Run with coverage
+pytest --cov=app --cov-report=xml
+```
+
+### Code Quality
+
+```bash
+# Format code
+black app tests
+
+# Sort imports
+isort app tests
+
+# Lint code
+flake8 app tests
+
+# Type checking
+mypy app tests
+
+# Security checks
+bandit -r app
+safety check
 ```
 
 ## Known Issues
 
-- Some dependencies may require additional system-level packages
-- Python 3.13 compatibility issues with certain packages (e.g., pydantic-core)
-- Tesseract OCR accuracy may vary depending on the PDF quality and format
+- Tesseract OCR accuracy may vary based on PDF quality
+- Some complex table layouts might not be detected correctly
+- Python 3.13 compatibility issues with some dependencies
+
+## Contributing
+
+1. Fork the repository
+2. Create your feature branch
+3. Run tests and quality checks
+4. Submit a pull request
 
 ## License
 
-[License information]
+This project is licensed under the MIT License - see the LICENSE file for details.

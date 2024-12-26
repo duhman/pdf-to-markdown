@@ -22,3 +22,6 @@ pytest-benchmark>=4.0.0
 pillow>=10.1.0
 aiofiles>=23.2.1
 pytest-xdist>=3.5.0
+opencv-python>=4.8.1.78
+numpy>=1.26.2
+xmltodict>=0.13.0
