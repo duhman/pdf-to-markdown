@@ -81,13 +81,28 @@ jobs:
     
     - name: Run tests with pytest
       run: |
-        pytest tests/ --cov=app --cov-report=xml
+        # Run unit tests and integration tests
+        pytest tests/ --cov=app --cov-report=xml -n auto
+        
+        # Run performance tests
+        pytest tests/performance/ --benchmark-only --benchmark-json output.json
+        
+        # Run property-based tests with increased examples
+        pytest tests/property/ --hypothesis-show-statistics
+      env:
+        PYTHONPATH: ${{ github.workspace }}
     
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3
       with:
         file: ./coverage.xml
         fail_ci_if_error: true
+    
+    - name: Upload benchmark results
+      uses: actions/upload-artifact@v3
+      with:
+        name: benchmark-results
+        path: output.json
 
   deploy:
     needs: [quality, test]
