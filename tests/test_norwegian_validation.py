@@ -1,9 +1,11 @@
 import pytest
 from app.validators import NorwegianValidator
 
+
 @pytest.fixture
 def validator():
     return NorwegianValidator()
+
 
 def test_org_number_validation(validator):
     """Test organization number validation."""
@@ -12,12 +14,14 @@ def test_org_number_validation(validator):
     assert not validator.validate_org_number("92393089")  # Too short
     assert not validator.validate_org_number("9239308921")  # Too long
 
+
 def test_kid_number_validation(validator):
     """Test KID number validation."""
     assert validator.validate_kid("2345678903")  # Valid MOD10
     assert validator.validate_kid("12345678903")  # Valid MOD11
     assert not validator.validate_kid("12345678902")  # Invalid checksum
     assert not validator.validate_kid("123")  # Too short
+
 
 def test_account_number_validation(validator):
     """Test bank account number validation."""
@@ -26,12 +30,14 @@ def test_account_number_validation(validator):
     assert not validator.validate_account_number("1506617755")  # Too short
     assert not validator.validate_account_number("15066177552")  # Invalid checksum
 
+
 def test_personal_number_validation(validator):
     """Test personal number (fødselsnummer) validation."""
     assert validator.validate_personal_number("01128049883")  # Valid
     assert not validator.validate_personal_number("01128049882")  # Invalid checksum
     assert not validator.validate_personal_number("32128049883")  # Invalid date
     assert not validator.validate_personal_number("0112804988")  # Too short
+
 
 def test_vat_number_validation(validator):
     """Test VAT number validation."""
@@ -40,12 +46,14 @@ def test_vat_number_validation(validator):
     assert not validator.validate_vat_number("NO123456789MVA")  # Invalid number
     assert not validator.validate_vat_number("92393089")  # Too short
 
+
 def test_address_validation(validator):
     """Test address validation."""
     assert validator.validate_address("0180", "Oslo")  # Valid
     assert validator.validate_address("1407", "Oslo")  # Valid
     assert not validator.validate_address("0000", "Oslo")  # Invalid postal code
     assert not validator.validate_address("123", "Oslo")  # Too short
+
 
 def test_currency_formatting(validator):
     """Test currency amount formatting."""
@@ -54,6 +62,7 @@ def test_currency_formatting(validator):
     assert validator.format_currency("1234.5") == "1 234,50 kr"
     assert validator.format_currency("1234.567") == "1 234,57 kr"  # Rounds to 2 decimals
 
+
 def test_phone_formatting(validator):
     """Test phone number formatting."""
     assert validator.format_phone("12345678") == "+47 12 34 56 78"
@@ -61,18 +70,22 @@ def test_phone_formatting(validator):
     assert validator.format_phone("004712345678") == "+47 12 34 56 78"
     assert validator.format_phone("12345") == "12345"  # Too short, returns unchanged
 
+
 def test_account_number_formatting(validator):
     """Test bank account number formatting."""
     assert validator.format_account_number("15066177553") == "1506.61.77553"
     assert validator.format_account_number("1506.61.77553") == "1506.61.77553"
-    assert validator.format_account_number("150661775") == "150661775"  # Too short, returns unchanged
+    assert (
+        validator.format_account_number("150661775") == "150661775"
+    )  # Too short, returns unchanged
+
 
 def test_address_formatting(validator):
     """Test address formatting."""
     address = "Storgata 1\n0180\nOslo"
     expected = "Storgata 1\n0180 Oslo"
     assert validator.format_address("Storgata 1", "0180", "Oslo") == expected
-    
+
     # Invalid postal code
     invalid_address = validator.format_address("Storgata 1", "0000", "Oslo")
     assert "Invalid postal code" in invalid_address

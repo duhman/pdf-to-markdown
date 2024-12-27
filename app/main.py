@@ -24,6 +24,7 @@ app.add_middleware(
 # Create a background tasks object
 background_tasks = BackgroundTasks()
 
+
 @app.post("/convert")
 async def convert_pdf(file: UploadFile = File(...)):
     """Convert a PDF file to markdown."""
@@ -36,22 +37,24 @@ async def convert_pdf(file: UploadFile = File(...)):
         # Process PDF
         processor = PDFProcessor()
         text = await processor.process_pdf(content)
-        
+
         # Generate markdown
         generator = MarkdownGenerator()
         language = processor.detect_language(text)
         markdown = generator.generate_markdown(text, language)
-        
+
         return {"markdown": markdown, "language": language}
-        
+
     except Exception as e:
         logger.error(f"Error processing PDF: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @app.get("/health")
 async def health_check():
     """Health check endpoint."""
     return {"status": "healthy"}
+
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)

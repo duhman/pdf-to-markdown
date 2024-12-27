@@ -2,14 +2,17 @@ import pytest
 from fastapi.testclient import TestClient
 from app.main import app
 
+
 @pytest.fixture
 def client():
     return TestClient(app)
+
 
 @pytest.fixture
 def sample_pdf_bytes():
     # Create a minimal PDF for testing
     return b"%PDF-1.4\n1 0 obj\n<<>>\nendobj\ntrailer\n<<>>\n%%EOF"
+
 
 @pytest.fixture
 def sample_english_text():
@@ -19,6 +22,7 @@ def sample_english_text():
     Total Amount: $100.00
     VAT: $20.00
     """
+
 
 @pytest.fixture
 def sample_norwegian_text():

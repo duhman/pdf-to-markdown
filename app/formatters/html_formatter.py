@@ -2,13 +2,15 @@ from typing import Dict, Any, List
 from ..validators import DataFormatter
 from jinja2 import Template
 
+
 class HTMLFormatter:
     def __init__(self):
         self.data_formatter = DataFormatter()
-        
+
     def format(self, data: dict, tables: List[str] = None) -> str:
         """Format data into HTML."""
-        template = Template("""<!DOCTYPE html>
+        template = Template(
+            """<!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
@@ -97,12 +99,13 @@ class HTMLFormatter:
     {% endif %}
 </body>
 </html>
-""")
+"""
+        )
 
         return template.render(data=data, tables=tables)
 
     def _convert_markdown_table_to_html(self, table: str) -> str:
-        html_table = table.replace('|', '</td><td>')
-        html_table = html_table.replace('\n', '</tr>\n<tr><td>')
+        html_table = table.replace("|", "</td><td>")
+        html_table = html_table.replace("\n", "</tr>\n<tr><td>")
         html_table = f"<table><tr><td>{html_table}</tr></table>"
         return html_table
