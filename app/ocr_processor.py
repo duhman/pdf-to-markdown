@@ -1,11 +1,12 @@
+"""OCR processor for extracting text from PDFs."""
+
 import re
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Tuple
 
 import cv2
 import numpy as np
 import pytesseract
 from pdf2image import convert_from_bytes
-from PIL import Image
 
 
 class OCRProcessor:
@@ -141,7 +142,6 @@ class OCRProcessor:
         """Try all preprocessing methods and return the best result."""
         best_text = ""
         best_confidence = 0
-        best_method = None
 
         for method_name, method in self.preprocessing_methods.items():
             processed = method(image)
@@ -156,7 +156,6 @@ class OCRProcessor:
             if confidence > best_confidence:
                 best_confidence = confidence
                 best_text = text
-                best_method = method_name
 
         return best_text, best_confidence
 
