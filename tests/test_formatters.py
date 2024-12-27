@@ -23,7 +23,11 @@ def sample_data():
 @pytest.fixture
 def sample_tables():
     return [
-        "| Description | Amount | Tax | Total |\n|-------------|--------|-----|--------|\n| Item 1 | 1000,00 | 250,00 | 1250,00 |"
+        (
+            "| Description | Amount | Tax | Total |\n"
+            "|-------------|--------|-----|--------|\n"
+            "| Item 1 | 1000,00 | 250,00 | 1250,00 |"
+        )
     ]
 
 
@@ -123,3 +127,16 @@ def test_special_character_handling(sample_data):
     yaml_formatter = YAMLFormatter()
     yaml_output = yaml_formatter.format(sample_data, None)
     assert "Øystein Åsen" in yaml_output
+
+
+def test_html_formatter_table():
+    """Test HTML formatter."""
+    formatter = HTMLFormatter()
+    data = [["Header 1", "Header 2"], ["Value 1", "Value 2"]]
+    expected = (
+        "<table>\n"
+        "<tr><th>Header 1</th><th>Header 2</th></tr>\n"
+        "<tr><td>Value 1</td><td>Value 2</td></tr>\n"
+        "</table>"
+    )
+    assert formatter.format(data) == expected

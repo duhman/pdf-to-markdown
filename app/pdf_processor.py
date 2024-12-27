@@ -1,14 +1,11 @@
-import io
-import logging
-import os
-import tempfile
-from typing import List, Union
+"""PDF processing module."""
 
-import cv2
-import numpy as np
+import logging
+from typing import Union
+
+import langdetect
 import pytesseract
 from fastapi import HTTPException, UploadFile
-from langdetect import detect
 from pdf2image import convert_from_bytes
 
 # Initialize logger
@@ -40,24 +37,22 @@ class PDFProcessor:
             # Process each page
             text_content = []
             for image in images:
-                # Convert PIL image to numpy array for OpenCV
-                image_np = np.array(image)
-
                 # Process with OCR
-                page_text = self.ocr.image_to_string(
-                    image_np, lang="+".join(self.languages.values())
-                )
+                page_text = self.ocr.image_to_string(image, lang="+".join(self.languages.values()))
                 text_content.append(page_text)
 
             return "\n".join(text_content)
 
+        except pytesseract.TesseractError as e:
+            logger.error(f"Tesseract error: {str(e)}")
+            raise HTTPException(status_code=400, detail="Tesseract error")
         except Exception as e:
             logger.error(f"Error converting PDF: {str(e)}")
             raise HTTPException(status_code=400, detail="Invalid PDF file")
 
     def detect_language(self, text: str) -> str:
         try:
-            detected = detect(text)
+            detected = langdetect.detect(text)
             return "no" if detected == "no" else "en"
-        except:
+        except langdetect.lang_detect_exception.LangDetectException:
             return "en"  # Default to English if detection fails

@@ -1,10 +1,14 @@
+"""Integration tests for PDF to Markdown conversion."""
+
+import asyncio
 import io
 import os
 import tempfile
-
-import pytest
-from fastapi.testclient import TestClient
+from pathlib import Path
 from PIL import Image
+
+from app.pdf_processor import PDFProcessor
+from fastapi.testclient import TestClient
 
 
 def create_test_pdf(text: str, output_path: str):
@@ -59,8 +63,6 @@ def test_concurrent_requests(client: TestClient, tmp_path):
     pdf_path = os.path.join(tmp_path, "test.pdf")
     create_test_pdf("Test content", pdf_path)
 
-    import asyncio
-
     import httpx
 
     async def make_request():
@@ -70,9 +72,40 @@ def test_concurrent_requests(client: TestClient, tmp_path):
                 return await ac.post("/convert", files=files)
 
     async def test_concurrent():
+        """Test concurrent PDF processing."""
         tasks = [make_request() for _ in range(5)]
         responses = await asyncio.gather(*tasks)
         return all(r.status_code == 200 for r in responses)
 
     success = asyncio.run(test_concurrent())
     assert success
+
+
+def test_pdf_to_markdown_conversion():
+    """Test end-to-end PDF to Markdown conversion."""
+    processor = PDFProcessor()
+    test_pdf_path = Path(__file__).parent / "test_files" / "sample.pdf"
+
+    with open(test_pdf_path, "rb") as f:
+        content = f.read()
+        result = processor.process_pdf(content)
+
+    assert result is not None
+    assert isinstance(result, str)
+    assert len(result) > 0
+
+
+async def test_concurrent_pdf_processing():
+    """Test concurrent PDF processing."""
+    processor = PDFProcessor()
+    test_pdf_path = Path(__file__).parent / "test_files" / "sample.pdf"
+
+    with open(test_pdf_path, "rb") as f:
+        content = f.read()
+
+    tasks = []
+    for _ in range(5):
+        tasks.append(asyncio.create_task(processor.process_pdf_async(content)))
+
+    results = await asyncio.gather(*tasks)
+    return all(r is not None for r in results)

@@ -1,5 +1,6 @@
+"""Markdown generator module."""
+
 import re
-from typing import Dict, List
 
 
 class MarkdownGenerator:
@@ -145,7 +146,10 @@ class MarkdownGenerator:
     def _extract_tax(self, text: str, language: str) -> str:
         patterns = {
             "en": r"(?:VAT|Tax):?\s*([\d\s,.]+(?:\s*[A-Za-z]+)?)",
-            "no": r"(?:MVA|Merverdiavgift):?\s*([\d\s,.]+(?:\s*[A-Za-z]+)?|NO\s*\d{3}\s*\d{3}\s*\d{3}\s*MVA)",
+            "no": (
+                r"(?:MVA|Merverdiavgift):?\s*"
+                r"([\d\s,.]+(?:\s*[A-Za-z]+)?|NO\s*\d{3}\s*\d{3}\s*\d{3}\s*MVA)"
+            ),
         }
         return self._extract_with_pattern(text, patterns.get(language, patterns["en"]))
 
@@ -168,3 +172,23 @@ class MarkdownGenerator:
     def _extract_with_pattern(self, text: str, pattern: str) -> str:
         match = re.search(pattern, text, re.IGNORECASE | re.MULTILINE)
         return match.group(1).strip() if match else ""
+
+    def _format_table(self, table_data: list) -> str:
+        """Format table data into markdown format."""
+        if not table_data or not table_data[0]:
+            return ""
+
+        # Format header and separator
+        header = " | ".join(str(cell) for cell in table_data[0])
+        separator = "-" * len(header)
+
+        # Format rows
+        rows = []
+        for row in table_data[1:]:
+            row_str = " | ".join(str(cell) for cell in row)
+            rows.append(f"| {row_str} |")
+
+        # Combine parts
+        parts = [f"| {header} |", f"| {separator} |"]
+        parts.extend(rows)
+        return "\n".join(parts)

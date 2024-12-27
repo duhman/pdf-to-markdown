@@ -1,4 +1,4 @@
-import pytest
+"""Test cases for Norwegian invoice processing."""
 
 from app.markdown_generator import MarkdownGenerator
 
@@ -8,33 +8,33 @@ def test_norwegian_invoice_extraction():
     generator = MarkdownGenerator()
 
     test_text = """
-    Meltek AS
-    Ekebergveien 9, 1407 Vinterbro, Norge
-    Telefon: 94898926
-    Mobil: 40184401
-    E-postadresse: post@meltek.no
-    Foretaksregisteret: NO 923 930 892 MVA
-    Nettside: Meltek.no
+Meltek AS
+Ekebergveien 9, 1407 Vinterbro, Norge
+Telefon: 94898926
+Mobil: 40184401
+E-postadresse: post@meltek.no
+Foretaksregisteret: NO 923 930 892 MVA
+Nettside: Meltek.no
 
-    FAKTURA
-    Fakturanr.: 1122
-    Fakturadato: 2024-11-19
-    Kundenr.: 10274
+FAKTURA
+Fakturanr.: 1122
+Fakturadato: 2024-11-19
+Kundenr.: 10274
 
-    Betalingsinformasjon
-    Forfallsdato: 2024-12-19
-    Kontonummer: 1506.61.77553
-    KID: 0112219
+Betalingsinformasjon
+Forfallsdato: 2024-12-19
+Kontonummer: 1506.61.77553
+KID: 0112219
 
-    Prosjekt: 2905 Elaway AS - ettermontering vallerveien
-    Vår kontakt: Tim Robin Frick
-    Leveransedato: 2024-11-19
-    Leveranseadresse: Pilestredet 12
-    
-    Kontraktsum ekskl. mva 5 000,00
-    
-    Timer            5 000,00    1 250,00    6 250,00
-    """
+Prosjekt: 2905 Elaway AS - ettermontering vallerveien
+Vår kontakt: Tim Robin Frick
+Leveransedato: 2024-11-19
+Leveranseadresse: Pilestredet 12
+
+Kontraktsum ekskl. mva 5 000,00
+
+Timer            5 000,00    1 250,00    6 250,00
+"""
 
     markdown = generator.generate_markdown(test_text, "no")
 
@@ -71,10 +71,10 @@ def test_norwegian_invoice_formatting():
     generator = MarkdownGenerator()
 
     test_text = """
-    Fakturanr.: 1122
-    KID: 0112219
-    Kontraktsum ekskl. mva 5 000,00
-    """
+Fakturanr.: 1122
+KID: 0112219
+Kontraktsum ekskl. mva 5 000,00
+"""
 
     markdown = generator.generate_markdown(test_text, "no")
 
@@ -90,9 +90,9 @@ def test_norwegian_amount_formats():
     generator = MarkdownGenerator()
 
     test_text = """
-    Sum: 1 234,56 kr
-    MVA: 308,64 kr
-    """
+Sum: 1 234,56 kr
+MVA: 308,64 kr
+"""
 
     markdown = generator.generate_markdown(test_text, "no")
 
