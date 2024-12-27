@@ -1,6 +1,8 @@
-from typing import Dict, Any, List
-from ..validators import DataFormatter
+from typing import Any, Dict, List
+
 from jinja2 import Template
+
+from ..validators import DataFormatter
 
 
 class HTMLFormatter:

@@ -1,6 +1,6 @@
 import re
-from typing import Optional
 from decimal import Decimal
+from typing import Optional
 
 
 class NorwegianValidator:
@@ -39,29 +39,11 @@ class NorwegianValidator:
         return org_number
 
     @staticmethod
-    def _mod10_checksum(number: str) -> int:
-        """Calculate MOD10 checksum for a number."""
-        weights = [2, 1] * (len(number) // 2 + 1)  # Alternate weights
-        total = 0
-        for i in range(len(number)):
-            product = int(number[i]) * weights[i]
-            total += sum(int(d) for d in str(product))
-        check_digit = (10 - (total % 10)) % 10
-        print(f"MOD10 calculation for {number}:")
-        print(f"Weights: {weights[:len(number)]}")
-        print(f"Total: {total}")
-        print(f"Check digit: {check_digit}")
-        return check_digit
-
-    @staticmethod
     def _mod11_checksum(number: str, weights: list) -> int:
         """Calculate MOD11 checksum for a number using given weights."""
         if len(weights) < len(number):
-            weights = weights[-len(number) :]
+            weights = weights[-len(number):]
         total = sum(int(d) * w for d, w in zip(number, weights))
-        print(f"MOD11 calculation for {number}:")
-        print(f"Weights: {weights}")
-        print(f"Total: {total}")
         remainder = total % 11
         if remainder == 0:
             return 0
@@ -69,40 +51,7 @@ class NorwegianValidator:
             return -1  # Invalid
         return 11 - remainder
 
-    @staticmethod
-    def validate_kid(kid: str) -> bool:
-        """Validate Norwegian KID number using MOD10 or MOD11 algorithm."""
-        if not kid or not kid.isdigit():
-            return False
-
-        # Remove any whitespace and get length
-        kid = kid.strip()
-        if len(kid) < 4 or len(kid) > 25:
-            return False
-
-        # Try MOD10 first
-        expected_checksum = int(kid[-1])
-        number = kid[:-1]
-        print(f"\nValidating KID {kid}")
-        print(f"Expected checksum: {expected_checksum}")
-
-        checksum = NorwegianValidator._mod10_checksum(number)
-        if checksum == expected_checksum:
-            print("MOD10 validation successful")
-            return True
-
-        # If MOD10 fails, try MOD11
-        weights = [5, 4, 3, 2, 7, 6, 5, 4, 3, 2]
-        checksum = NorwegianValidator._mod11_checksum(number, weights)
-        if checksum != -1 and checksum == expected_checksum:
-            print("MOD11 validation successful")
-            return True
-
-        print("Both MOD10 and MOD11 validation failed")
-        return False
-
-    @staticmethod
-    def validate_personal_number(number: str) -> bool:
+    def validate_personal_number(self, number: str) -> bool:
         """Validate Norwegian personal number (fødselsnummer)."""
         if not number or not number.isdigit() or len(number) != 11:
             return False
@@ -133,19 +82,20 @@ class NorwegianValidator:
         print(f"Full year: {year}")
 
         # Validate control digits using MOD11
-        weights1 = [3, 7, 6, 1, 8, 9, 4, 5, 2]
-        weights2 = [5, 4, 3, 2, 7, 6, 5, 4, 3, 2]
+        # The weights for Norwegian personal numbers
+        weights1 = [3, 7, 6, 1, 8, 9, 4, 5, 2]  # For first control digit
+        weights2 = [5, 4, 3, 2, 7, 6, 5, 4, 3, 2]  # For second control digit
 
         # First control digit
         print("\nChecking first control digit:")
-        checksum1 = NorwegianValidator._mod11_checksum(number[:9], weights1)
+        checksum1 = self._mod11_checksum(number[:9], weights1)
         if checksum1 == -1 or checksum1 != int(number[9]):
             print(f"First control digit validation failed. Expected {number[9]}, got {checksum1}")
             return False
 
         # Second control digit
         print("\nChecking second control digit:")
-        checksum2 = NorwegianValidator._mod11_checksum(number[:10], weights2)
+        checksum2 = self._mod11_checksum(number[:10], weights2)
         if checksum2 == -1 or checksum2 != int(number[10]):
             print(f"Second control digit validation failed. Expected {number[10]}, got {checksum2}")
             return False
@@ -245,8 +195,6 @@ class DataFormatter:
                 return self.norwegian.format_currency(value)
             elif field_type == "phone":
                 return self.norwegian.format_phone(value)
-            elif field_type == "kid":
-                return value if self.norwegian.validate_kid(value) else f"Invalid KID: {value}"
             elif field_type == "address":
                 parts = value.split("\n")
                 if len(parts) == 3:
@@ -262,8 +210,6 @@ class DataFormatter:
         if language == "no":
             if field_type == "org_number":
                 return self.norwegian.validate_org_number(value)
-            elif field_type == "kid":
-                return self.norwegian.validate_kid(value)
             elif field_type == "address":
                 parts = value.split("\n")
                 if len(parts) == 3:

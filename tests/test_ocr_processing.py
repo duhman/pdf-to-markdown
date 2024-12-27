@@ -1,6 +1,7 @@
-import pytest
-import numpy as np
 import cv2
+import numpy as np
+import pytest
+
 from app.ocr_processor import OCRProcessor
 
 

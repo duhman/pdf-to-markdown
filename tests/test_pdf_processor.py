@@ -1,7 +1,9 @@
-import pytest
-from app.pdf_processor import PDFProcessor
-from fastapi import UploadFile
 import io
+
+import pytest
+from fastapi import UploadFile
+
+from app.pdf_processor import PDFProcessor
 
 
 def test_pdf_processor_initialization():

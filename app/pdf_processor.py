@@ -1,15 +1,15 @@
-import tempfile
-import os
-from pdf2image import convert_from_bytes
-import pytesseract
-from langdetect import detect
-from typing import List, Union
 import io
-from fastapi import UploadFile
 import logging
-import numpy as np
+import os
+import tempfile
+from typing import List, Union
+
 import cv2
-from fastapi import HTTPException
+import numpy as np
+import pytesseract
+from fastapi import HTTPException, UploadFile
+from langdetect import detect
+from pdf2image import convert_from_bytes
 
 # Initialize logger
 logger = logging.getLogger(__name__)

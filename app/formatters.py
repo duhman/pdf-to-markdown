@@ -1,7 +1,8 @@
-from typing import Dict, Any, Optional
 import json
 import xml.etree.ElementTree as ET
 from datetime import datetime
+from typing import Any, Dict, Optional
+
 from .validators import DataFormatter
 
 

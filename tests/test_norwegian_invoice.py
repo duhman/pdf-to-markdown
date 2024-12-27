@@ -1,4 +1,5 @@
 import pytest
+
 from app.markdown_generator import MarkdownGenerator
 
 

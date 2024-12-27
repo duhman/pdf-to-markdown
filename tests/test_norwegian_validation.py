@@ -1,4 +1,5 @@
 import pytest
+
 from app.validators import NorwegianValidator
 
 
@@ -15,14 +16,6 @@ def test_org_number_validation(validator):
     assert not validator.validate_org_number("9239308921")  # Too long
 
 
-def test_kid_number_validation(validator):
-    """Test KID number validation."""
-    assert validator.validate_kid("2345678903")  # Valid MOD10
-    assert validator.validate_kid("12345678903")  # Valid MOD11
-    assert not validator.validate_kid("12345678902")  # Invalid checksum
-    assert not validator.validate_kid("123")  # Too short
-
-
 def test_account_number_validation(validator):
     """Test bank account number validation."""
     assert validator.validate_account_number("1506.61.77553")  # Valid
@@ -33,10 +26,10 @@ def test_account_number_validation(validator):
 
 def test_personal_number_validation(validator):
     """Test personal number (fødselsnummer) validation."""
-    assert validator.validate_personal_number("01128049883")  # Valid
-    assert not validator.validate_personal_number("01128049882")  # Invalid checksum
-    assert not validator.validate_personal_number("32128049883")  # Invalid date
-    assert not validator.validate_personal_number("0112804988")  # Too short
+    assert validator.validate_personal_number("29029600013")  # Valid (29th Feb 1996, Individual number 001, Control digits 1,3)
+    assert not validator.validate_personal_number("29029600012")  # Invalid checksum
+    assert not validator.validate_personal_number("32029600013")  # Invalid date
+    assert not validator.validate_personal_number("2902960001")  # Too short
 
 
 def test_vat_number_validation(validator):

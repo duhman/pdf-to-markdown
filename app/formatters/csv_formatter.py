@@ -1,6 +1,7 @@
 import csv
 from io import StringIO
-from typing import Dict, Any, List
+from typing import Any, Dict, List
+
 from ..validators import DataFormatter
 
 

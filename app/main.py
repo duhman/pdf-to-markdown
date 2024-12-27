@@ -1,11 +1,13 @@
-from fastapi import FastAPI, UploadFile, File, BackgroundTasks
-from fastapi.responses import JSONResponse
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.exceptions import HTTPException
 import logging
+
 import uvicorn
-from app.pdf_processor import PDFProcessor
+from fastapi import BackgroundTasks, FastAPI, File, UploadFile
+from fastapi.exceptions import HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+
 from app.markdown_generator import MarkdownGenerator
+from app.pdf_processor import PDFProcessor
 
 # Create a logger
 logger = logging.getLogger(__name__)

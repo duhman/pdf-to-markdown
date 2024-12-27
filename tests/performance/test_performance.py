@@ -1,8 +1,10 @@
-import pytest
+import asyncio
 import time
+
+import pytest
+
 from app.markdown_generator import MarkdownGenerator
 from app.pdf_processor import PDFProcessor
-import asyncio
 
 
 def test_markdown_generator_performance(sample_english_text, benchmark):

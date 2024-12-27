@@ -1,5 +1,6 @@
 import pytest
-from app.table_extractor import TableExtractor, TableCell, TableRow
+
+from app.table_extractor import TableCell, TableExtractor, TableRow
 
 
 @pytest.fixture

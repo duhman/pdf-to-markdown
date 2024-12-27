@@ -1,9 +1,10 @@
-import pytest
-from fastapi.testclient import TestClient
+import io
 import os
 import tempfile
+
+import pytest
+from fastapi.testclient import TestClient
 from PIL import Image
-import io
 
 
 def create_test_pdf(text: str, output_path: str):
@@ -59,6 +60,7 @@ def test_concurrent_requests(client: TestClient, tmp_path):
     create_test_pdf("Test content", pdf_path)
 
     import asyncio
+
     import httpx
 
     async def make_request():

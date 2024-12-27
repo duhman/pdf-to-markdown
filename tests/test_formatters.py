@@ -1,4 +1,5 @@
 import pytest
+
 from app.formatters.csv_formatter import CSVFormatter
 from app.formatters.html_formatter import HTMLFormatter
 from app.formatters.yaml_formatter import YAMLFormatter

@@ -1,10 +1,11 @@
+import re
 from typing import Dict, List, Optional, Tuple
-import pytesseract
-from PIL import Image
+
 import cv2
 import numpy as np
+import pytesseract
 from pdf2image import convert_from_bytes
-import re
+from PIL import Image
 
 
 class OCRProcessor:
