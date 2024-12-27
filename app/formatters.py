@@ -1,4 +1,5 @@
 """Base formatter and formatter implementations."""
+
 import json
 import xml.etree.ElementTree as ET
 from abc import ABC, abstractmethod

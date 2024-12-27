@@ -1,4 +1,5 @@
 """YAML formatter implementation."""
+
 from typing import Any, Dict
 
 import yaml
