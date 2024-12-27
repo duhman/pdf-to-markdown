@@ -5,13 +5,18 @@ from typing import Any, Dict, List, Tuple, Union, cast
 
 import cv2  # type: ignore
 import numpy as np  # type: ignore
+import numpy.typing as npt
 import pytesseract  # type: ignore
 from pdf2image import convert_from_bytes  # type: ignore
 
 
 class OCRProcessor:
+    """OCR processor for extracting text from PDFs."""
+
     def __init__(self) -> None:
+        """Initialize OCR processor."""
         self.languages = {"en": "eng", "no": "nor"}
+        self.language = "eng+nor"
         self.preprocessing_methods = {
             "default": self._default_preprocessing,
             "threshold": self._threshold_preprocessing,
@@ -70,7 +75,7 @@ class OCRProcessor:
 
         return full_text, layout_info
 
-    def _default_preprocessing(self, image: np.ndarray) -> np.ndarray:
+    def _default_preprocessing(self, image: npt.NDArray[np.uint8]) -> npt.NDArray[np.uint8]:
         """Basic preprocessing."""
         if len(image.shape) == 3:
             gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -78,7 +83,7 @@ class OCRProcessor:
             gray = image
         return cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
 
-    def _threshold_preprocessing(self, image: np.ndarray) -> np.ndarray:
+    def _threshold_preprocessing(self, image: npt.NDArray[np.uint8]) -> npt.NDArray[np.uint8]:
         """Threshold-based preprocessing."""
         if len(image.shape) == 3:
             gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -86,7 +91,7 @@ class OCRProcessor:
             gray = image
         return cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
 
-    def _adaptive_preprocessing(self, image: np.ndarray) -> np.ndarray:
+    def _adaptive_preprocessing(self, image: npt.NDArray[np.uint8]) -> npt.NDArray[np.uint8]:
         """Adaptive threshold preprocessing."""
         if len(image.shape) == 3:
             gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -96,7 +101,7 @@ class OCRProcessor:
             gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2
         )
 
-    def _denoise_preprocessing(self, image: np.ndarray) -> np.ndarray:
+    def _denoise_preprocessing(self, image: npt.NDArray[np.uint8]) -> npt.NDArray[np.uint8]:
         """Denoise the image."""
         if len(image.shape) == 3:
             gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -104,7 +109,7 @@ class OCRProcessor:
             gray = image
         return cv2.fastNlMeansDenoising(gray)
 
-    def _deskew_preprocessing(self, image: np.ndarray) -> np.ndarray:
+    def _deskew_preprocessing(self, image: npt.NDArray[np.uint8]) -> npt.NDArray[np.uint8]:
         """Deskew the image."""
         if len(image.shape) == 3:
             gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -121,7 +126,7 @@ class OCRProcessor:
             gray, M, (w, h), flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_REPLICATE
         )
 
-    def _sharpen_preprocessing(self, image: np.ndarray) -> np.ndarray:
+    def _sharpen_preprocessing(self, image: npt.NDArray[np.uint8]) -> npt.NDArray[np.uint8]:
         """Sharpen the image."""
         if len(image.shape) == 3:
             gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -130,7 +135,7 @@ class OCRProcessor:
         kernel = np.array([[-1, -1, -1], [-1, 9, -1], [-1, -1, -1]])
         return cv2.filter2D(gray, -1, kernel)
 
-    def _contrast_preprocessing(self, image: np.ndarray) -> np.ndarray:
+    def _contrast_preprocessing(self, image: npt.NDArray[np.uint8]) -> npt.NDArray[np.uint8]:
         """Enhance contrast."""
         if len(image.shape) == 3:
             gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -138,16 +143,14 @@ class OCRProcessor:
             gray = image
         return cv2.equalizeHist(gray)
 
-    def _process_with_best_method(self, image: np.ndarray) -> Tuple[str, float]:
+    def _process_with_best_method(self, image: npt.NDArray[np.uint8]) -> Tuple[str, float]:
         """Try all preprocessing methods and return the best result."""
         best_text = ""
         best_confidence = 0
 
         for method_name, method in self.preprocessing_methods.items():
             processed = method(image)
-            text = pytesseract.image_to_string(
-                processed, lang="+".join(self.languages.values()), config="--psm 6"
-            )
+            text = pytesseract.image_to_string(processed, lang=self.language, config="--psm 6")
 
             # Get confidence scores
             data = pytesseract.image_to_data(processed, output_type=pytesseract.Output.DICT)
@@ -223,7 +226,7 @@ class OCRProcessor:
 
         return sections
 
-    def detect_text_orientation(self, image: np.ndarray) -> float:
+    def detect_text_orientation(self, image: npt.NDArray[np.uint8]) -> float:
         """Detect the orientation of text in the image."""
         # Convert to grayscale
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -250,16 +253,16 @@ class OCRProcessor:
 
         return 0.0
 
-    def process_image(self, image: np.ndarray, method: str = "default") -> str:
+    def process_image(self, image: npt.NDArray[np.uint8], method: str = "default") -> str:
         """Process an image and extract text using the specified preprocessing method."""
         if method not in self.preprocessing_methods:
             raise ValueError(f"Unknown preprocessing method: {method}")
 
         processed = self.preprocessing_methods[method](image)
-        text = pytesseract.image_to_string(processed)
+        text = pytesseract.image_to_string(processed, lang=self.language)
         return str(text)
 
-    def detect_text_regions(self, image: np.ndarray) -> List[Tuple[int, int, int, int]]:
+    def detect_text_regions(self, image: npt.NDArray[np.uint8]) -> List[Tuple[int, int, int, int]]:
         """Detect regions containing text in the image."""
         # Convert to grayscale
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -280,7 +283,7 @@ class OCRProcessor:
 
         return regions
 
-    def enhance_contrast(self, image: np.ndarray) -> np.ndarray:
+    def enhance_contrast(self, image: npt.NDArray[np.uint8]) -> npt.NDArray[np.uint8]:
         """Enhance image contrast using histogram equalization."""
         # Convert to LAB color space
         lab = cv2.cvtColor(image, cv2.COLOR_BGR2LAB)
@@ -296,7 +299,7 @@ class OCRProcessor:
         # Convert back to BGR
         return cv2.cvtColor(limg, cv2.COLOR_LAB2BGR)
 
-    def remove_noise(self, image: np.ndarray) -> np.ndarray:
+    def remove_noise(self, image: npt.NDArray[np.uint8]) -> npt.NDArray[np.uint8]:
         """Remove noise from the image."""
         # Convert to grayscale
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -307,7 +310,7 @@ class OCRProcessor:
         # Apply bilateral filter
         return cv2.bilateralFilter(denoised, 9, 75, 75)
 
-    def deskew_image(self, image: np.ndarray) -> np.ndarray:
+    def deskew_image(self, image: npt.NDArray[np.uint8]) -> npt.NDArray[np.uint8]:
         """Deskew the image based on detected text orientation."""
         angle = self.detect_text_orientation(image)
 
