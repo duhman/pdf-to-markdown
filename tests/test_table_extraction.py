@@ -1,6 +1,9 @@
+"""Tests for table extraction functionality."""
+
+
 import pytest
 
-from app.table_extractor import TableCell, TableExtractor, TableRow
+from app.table_extractor import TableExtractor
 
 
 @pytest.fixture
