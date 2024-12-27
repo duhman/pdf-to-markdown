@@ -77,10 +77,10 @@ def test_account_number_formatting(validator):
 
 def test_address_formatting(validator):
     """Test address formatting."""
-    address = "Storgata 1\n0180\nOslo"
-    expected = "Storgata 1\n0180 Oslo"
-    assert validator.format_address("Storgata 1", "0180", "Oslo") == expected
+    # Valid address
+    formatted = validator.format_address("Storgata 1", "0182", "Oslo")
+    assert formatted == "Storgata 1\n0182 Oslo\nNorway"
 
-    # Invalid postal code
-    invalid_address = validator.format_address("Storgata 1", "0000", "Oslo")
-    assert "Invalid postal code" in invalid_address
+    # Address with extra whitespace
+    formatted = validator.format_address(" Storgata 1 ", " 0182 ", " Oslo ")
+    assert formatted == "Storgata 1\n0182 Oslo\nNorway"

@@ -1,6 +1,5 @@
 import re
 from decimal import Decimal
-from typing import Optional
 
 
 class NorwegianValidator:
@@ -111,18 +110,19 @@ class NorwegianValidator:
 
     def validate_account_number(self, account: str) -> bool:
         """Validate Norwegian bank account number."""
-        # Remove spaces and dots
-        cleaned = "".join(c for c in account if c.isdigit())
-        if len(cleaned) != 11:
+        # Remove dots if present
+        account = account.replace(".", "")
+
+        if not account or not account.isdigit() or len(account) != 11:
             return False
 
-        # Calculate control digit using MOD11
-        weights = [5, 4, 3, 2, 7, 6, 5, 4, 3, 2]
-        sum_product = sum(int(d) * w for d, w in zip(cleaned[:-1], weights))
-        control = (11 - (sum_product % 11)) % 11
-        if control == 10:
+        try:
+            # Calculate MOD11 checksum
+            weights = [5, 4, 3, 2, 7, 6, 5, 4, 3, 2]
+            checksum = self._mod11_checksum(account[:-1], weights)
+            return checksum == int(account[-1])
+        except ValueError:  # Be specific about the exception
             return False
-        return control == int(cleaned[-1])
 
     @staticmethod
     def validate_vat_number(vat: str) -> bool:
@@ -132,38 +132,34 @@ class NorwegianValidator:
         return NorwegianValidator.validate_org_number(cleaned)
 
     @staticmethod
-    def format_currency(amount: str) -> str:
-        """Format currency amount in Norwegian style."""
+    def format_currency(value: str) -> str:
+        """Format Norwegian currency (NOK)."""
         try:
-            # Convert to decimal for precise handling
-            cleaned = re.sub(r"[^0-9,.-]", "", amount.replace(" ", ""))
-            cleaned = cleaned.replace(",", ".")
-            decimal_amount = Decimal(cleaned)
-
-            # Format with Norwegian conventions
-            whole, decimal = f"{decimal_amount:.2f}".split(".")
-            whole = " ".join(re.findall(r"\d{1,3}(?=(?:\d{3})*$)", whole))
-            return f"{whole},{decimal} kr"
-        except:
-            return amount
+            # Convert to decimal for proper handling of numbers
+            amount = Decimal(value.replace(" ", "").replace(",", "."))
+            # Format with thousands separator and two decimal places
+            formatted = "{:,.2f}".format(amount)
+            # Replace decimal point with comma and use space as thousands separator
+            formatted = formatted.replace(",", " ").replace(".", ",")
+            return f"NOK {formatted}"
+        except (ValueError, Decimal.InvalidOperation):  # Be specific about exceptions
+            return value
 
     @staticmethod
     def format_phone(phone: str) -> str:
         """Format Norwegian phone number."""
-        # Remove all non-digit characters
-        cleaned = re.sub(r"[^0-9]", "", phone)
+        try:
+            # Remove all non-digit characters
+            digits = "".join(filter(str.isdigit, phone))
 
-        # Handle numbers with country code
-        if cleaned.startswith("47") and len(cleaned) == 10:
-            cleaned = cleaned[2:]
-        elif cleaned.startswith("0047") and len(cleaned) == 12:
-            cleaned = cleaned[4:]
-
-        # Format 8-digit number
-        if len(cleaned) == 8:
-            return f"+47 {cleaned[:2]} {cleaned[2:4]} {cleaned[4:6]} {cleaned[6:]}"
-
-        return phone
+            # Check if it's a valid Norwegian phone number
+            if len(digits) == 8:
+                return f"{digits[:2]} {digits[2:4]} {digits[4:6]} {digits[6:]}"
+            elif len(digits) == 11 and digits.startswith("47"):
+                return f"+{digits[:2]} {digits[2:4]} {digits[4:6]} {digits[6:8]} {digits[8:]}"
+            return phone
+        except ValueError:  # Be specific about the exception
+            return phone
 
     def format_address(self, street: str, postal_code: str, city: str) -> str:
         """Format Norwegian address."""
