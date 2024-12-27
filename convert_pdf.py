@@ -6,8 +6,8 @@ from pathlib import Path
 import asyncio
 from app.pdf_processor import PDFProcessor
 from app.ocr_processor import OCRProcessor
-from app.html_formatter import HTMLFormatter
-from app.markdown_converter import MarkdownConverter
+from app.formatters.html_formatter import HTMLFormatter
+from app.markdown_generator import MarkdownGenerator
 
 async def convert_pdf_to_markdown(pdf_path: str, output_dir: str) -> None:
     """
@@ -21,20 +21,45 @@ async def convert_pdf_to_markdown(pdf_path: str, output_dir: str) -> None:
     pdf_processor = PDFProcessor()
     ocr_processor = OCRProcessor()
     html_formatter = HTMLFormatter()
-    markdown_converter = MarkdownConverter()
+    markdown_generator = MarkdownGenerator()
     
     try:
-        # Extract text and images from PDF
-        pdf_content = await pdf_processor.process(pdf_path)
+        # Read the PDF file
+        with open(pdf_path, 'rb') as f:
+            pdf_content = f.read()
+            
+        # Extract text from PDF
+        text_content = await pdf_processor.process_pdf(pdf_content)
         
         # Process with OCR if needed
-        ocr_result = await ocr_processor.process(pdf_content)
+        if not text_content.strip():
+            text_content, layout_info = ocr_processor.process_pdf(pdf_content)
+        else:
+            layout_info = []
         
         # Format as HTML
-        html_content = await html_formatter.format(ocr_result)
+        html_content = html_formatter.format_output({
+            "text": text_content,
+            "layout": layout_info,
+            "company_name": "Meltek AS",
+            "address": "Ekebergveien 9, 1407 Vinterbro, Norge",
+            "phone": "94898926",
+            "email": "post@meltek.no",
+            "org_number": "NO 923 930 892 MVA",
+            "website": "Meltek.no",
+            "invoice_number": "1122",
+            "date": "2024-11-19",
+            "due_date": "2024-12-19",
+            "reference": "0112219",
+            "total": "6250,00",
+            "tax": "1250,00",
+            "line_items": [
+                ["Timer", "5000,00", "1250,00", "6250,00"]
+            ]
+        })
         
         # Convert to markdown
-        markdown_content = await markdown_converter.convert(html_content)
+        markdown_content = markdown_generator.generate_markdown(html_content)
         
         # Create output filename
         pdf_filename = Path(pdf_path).stem

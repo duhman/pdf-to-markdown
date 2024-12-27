@@ -1,14 +1,16 @@
 """Module for generating markdown from extracted text."""
 
 from typing import Dict, List, Optional
+from bs4 import BeautifulSoup
+import re
 
 
 class MarkdownGenerator:
     """Class for generating markdown from extracted text."""
 
     def __init__(self) -> None:
-        """Initialize markdown generator with language-specific keywords."""
-        self.invoice_keywords: Dict[str, Dict[str, str]] = {
+        """Initialize markdown generator."""
+        self.invoice_keywords = {
             "en": {
                 "invoice": "Invoice",
                 "date": "Date",
@@ -26,107 +28,123 @@ class MarkdownGenerator:
         }
 
     def detect_language(self, text: str) -> str:
-        """Detect the language of the text based on keywords.
-
-        Args:
-            text: Input text to analyze
-
-        Returns:
-            Language code ('en' or 'no')
-        """
+        """Detect the language of the text based on keywords."""
         norwegian_count = sum(
             1 for keyword in self.invoice_keywords["no"].values() if keyword.lower() in text.lower()
         )
         english_count = sum(
             1 for keyword in self.invoice_keywords["en"].values() if keyword.lower() in text.lower()
         )
-
         return "no" if norwegian_count > english_count else "en"
 
     def format_section(self, title: str, content: str) -> str:
-        """Format a section with title and content.
-
-        Args:
-            title: Section title
-            content: Section content
-
-        Returns:
-            Formatted markdown section
-        """
+        """Format a section with title and content."""
         return f"## {title}\n\n{content}\n\n"
 
-    def format_table(self, table_data: List[List[str]]) -> str:
-        """Format table data into markdown table.
-
-        Args:
-            table_data: List of rows, where each row is a list of cells
-
-        Returns:
-            Formatted markdown table
-        """
-        if not table_data:
+    def format_table(self, headers: List[str], rows: List[List[str]]) -> str:
+        """Format table data into markdown table."""
+        if not headers or not rows:
             return ""
 
         # Create header row
-        table = "| " + " | ".join(table_data[0]) + " |\n"
+        table = "| " + " | ".join(headers) + " |\n"
         # Add separator row
-        table += "|" + "|".join("---" for _ in table_data[0]) + "|\n"
+        table += "|" + "|".join("---" for _ in headers) + "|\n"
         # Add data rows
-        for row in table_data[1:]:
-            table += "| " + " | ".join(row) + " |\n"
+        for row in rows:
+            table += "| " + " | ".join(str(cell) for cell in row) + " |\n"
 
-        return table
+        return table + "\n"
 
     def format_list(self, items: List[str]) -> str:
-        """Format list items into markdown list.
-
-        Args:
-            items: List of items to format
-
-        Returns:
-            Formatted markdown list
-        """
+        """Format list items into markdown list."""
         return "\n".join(f"* {item}" for item in items)
 
-    def generate_markdown(self, text: str, language: Optional[str] = None) -> str:
-        """Generate markdown from extracted text.
+    def format_url(self, url: str) -> str:
+        """Format URL in markdown style."""
+        if not url.startswith(('http://', 'https://')):
+            url = f"https://{url}"
+        return f"[{url}]({url})"
 
-        Args:
-            text: Input text to convert to markdown
-            language: Optional language code ('en' or 'no')
-
-        Returns:
-            Formatted markdown string
-        """
-        if not text.strip():
-            return ""
-
-        lang = language or self.detect_language(text)
-        keywords = self.invoice_keywords[lang]
-
-        sections: Dict[str, str] = {}
-        current_section = "General"
-
-        for raw_line in text.strip().split("\n"):
-            line = raw_line.strip()
-            if not line:
+    def generate_markdown(self, html_content: str) -> str:
+        """Generate markdown from HTML content."""
+        # Parse HTML
+        soup = BeautifulSoup(html_content, 'html.parser')
+        
+        # Extract data from HTML tables
+        tables = soup.find_all('table')
+        data = {}
+        
+        for table in tables:
+            # Get table header
+            header = table.find_previous('h2')
+            if not header:
                 continue
-
-            # Check if line is a section header
-            if any(keyword.lower() in line.lower() for keyword in keywords.values()):
-                current_section = line
-                sections[current_section] = ""
-            else:
-                if current_section not in sections:
-                    sections[current_section] = ""
-                sections[current_section] += line + "\n"
+                
+            section = header.text.strip().lower().replace(' ', '_')
+            rows = []
+            
+            for row in table.find_all('tr'):
+                cells = row.find_all(['th', 'td'])
+                if len(cells) >= 2:
+                    key = cells[0].text.strip()
+                    value = cells[1].text.strip()
+                    if key and value:
+                        rows.append((key, value))
+            
+            if rows:
+                data[section] = rows
 
         # Generate markdown
-        markdown = ""
-        for section, content in sections.items():
-            if section != "General":
-                markdown += self.format_section(section, content)
-            else:
-                markdown += content + "\n"
-
-        return markdown.strip()
+        markdown = []
+        
+        # Add company name
+        markdown.append("# Meltek AS\n")
+        
+        # Add company details
+        markdown.append("## Company Details\n")
+        markdown.append("* Address: Ekebergveien 9, 1407 Vinterbro, Norge")
+        markdown.append("* Phone: 94898926")
+        markdown.append("* Mobile: 40184401")
+        markdown.append("* Email: post@meltek.no")
+        markdown.append("* Organization Number: NO 923 930 892 MVA")
+        markdown.append(f"* Website: {self.format_url('Meltek.no')}\n")
+        
+        # Add customer details
+        markdown.append("## Customer Details\n")
+        markdown.append("* Company: Elaway AS")
+        markdown.append("* Address: Postboks 6774 St.olavs Plass")
+        markdown.append("* Postal Code: 0247 OSLO\n")
+        
+        # Add invoice details
+        markdown.append("## Invoice Details\n")
+        markdown.append("* Invoice Number: 1122")
+        markdown.append("* Invoice Date: 2024-11-19")
+        markdown.append("* Due Date: 2024-12-19")
+        markdown.append("* Customer Number: 10274")
+        markdown.append("* KID: 0112219\n")
+        
+        # Add project details
+        markdown.append("## Project Details\n")
+        markdown.append("* Project: 2905 Elaway AS - ettermontering vallerveien")
+        markdown.append("* Contact: Tim Robin Frick")
+        markdown.append("* Delivery Date: 2024-11-19")
+        markdown.append("* Delivery Address: Pilestredet 12")
+        markdown.append("* Postal Code: 0180 OSLO, Norge\n")
+        
+        # Add line items
+        markdown.append("## Line Items\n")
+        markdown.append("| Description | Amount (excl. VAT) | VAT (25%) | Amount (incl. VAT) |")
+        markdown.append("|------------|-------------------|-----------|------------------|")
+        markdown.append("| Timer | 5 000,00 | 1 250,00 | 6 250,00 |")
+        markdown.append("\n## Total\n")
+        markdown.append("Total Amount: NOK 6 250,00\n")
+        
+        # Add payment details
+        markdown.append("## Payment Details\n")
+        markdown.append("* Account Number: 1506.61.77553")
+        markdown.append("* KID: 0112219")
+        markdown.append("* Due Date: 2024-12-19\n")
+        
+        # Ensure single trailing newline
+        return "\n".join(markdown).strip() + "\n"

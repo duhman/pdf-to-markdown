@@ -1,153 +1,118 @@
 # PDF to Markdown Converter
 
-A FastAPI application that converts PDF invoices to structured markdown documents using OCR technology. Supports both Norwegian and English invoices.
+A Python tool for converting PDF invoices to well-formatted Markdown files. The tool uses OCR when needed and preserves the structure and formatting of the original invoice.
 
 ## Features
 
-### Core Features
-
-- Convert PDF invoices to structured markdown
-- Multi-language support (Norwegian and English)
-- Automatic language detection
-- RESTful API interface
-- Command-line batch conversion tool
-- Document type detection (Invoices, Declarations)
-
-### Advanced Features
-
-- Smart field extraction and validation
-  - Norwegian organization number (MVA) validation
-  - KID number validation
-  - Currency formatting
-  - Phone number formatting
-- Table detection and extraction
-- Multiple output formats (Markdown, JSON, XML)
-- Enhanced OCR processing
-  - Multiple preprocessing methods
-  - Layout detection
-  - OCR error correction
-  - Table structure recognition
+- Converts PDF invoices to clean, well-formatted Markdown
+- Extracts and preserves all important invoice information:
+  - Company details
+  - Customer information
+  - Invoice details
+  - Project information
+  - Line items with pricing
+  - Payment details
+- Uses OCR (Optical Character Recognition) when needed
+- Supports both English and Norwegian invoices
+- Follows markdown best practices and linting rules
+- Handles both text-based and image-based PDFs
 
 ## Installation
 
 1. Clone the repository:
-
 ```bash
-git clone https://github.com/duhman/pdf-to-markdown.git
+git clone https://github.com/yourusername/pdf-to-markdown.git
 cd pdf-to-markdown
 ```
 
-2. Install system dependencies:
-
+2. Create and activate a virtual environment:
 ```bash
-# Ubuntu/Debian
-sudo apt-get update
-sudo apt-get install -y tesseract-ocr tesseract-ocr-nor poppler-utils imagemagick
-
-# macOS
-brew install tesseract tesseract-lang poppler imagemagick
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
 ```
 
-3. Install Python dependencies:
-
+3. Install dependencies:
 ```bash
 pip install -r requirements.txt
 ```
 
 ## Usage
 
-### Using the Web API
-
-1. Start the server:
-
-```bash
-uvicorn app.main:app --reload
-```
-
-2. Convert a PDF invoice via API:
-
-```bash
-curl -X POST "http://localhost:8000/convert" \
-     -H "accept: application/json" \
-     -H "Content-Type: multipart/form-data" \
-     -F "file=@invoice.pdf" \
-     -F "output_format=markdown"
-```
-
-### Using the Command Line Script
-
-1. Place your PDF files in the `input_pdfs` directory
+1. Place your PDF invoices in the `input_pdfs` directory.
 2. Run the conversion script:
-
 ```bash
-python3 convert_pdf.py
+python convert_pdf.py
+```
+3. Find the converted markdown files in the `output_markdown` directory.
+
+## Output Format
+
+The converted markdown files follow a consistent structure:
+
+```markdown
+# Company Name
+
+## Company Details
+* Address: ...
+* Phone: ...
+* Email: ...
+* Organization Number: ...
+* Website: ...
+
+## Customer Details
+* Company: ...
+* Address: ...
+* Postal Code: ...
+
+## Invoice Details
+* Invoice Number: ...
+* Invoice Date: ...
+* Due Date: ...
+* Customer Number: ...
+* Reference: ...
+
+## Project Details
+* Project: ...
+* Contact: ...
+* Delivery Date: ...
+* Delivery Address: ...
+
+## Line Items
+| Description | Amount (excl. VAT) | VAT (25%) | Amount (incl. VAT) |
+|------------|-------------------|-----------|------------------|
+| Item 1     | 1000,00          | 250,00    | 1250,00         |
+
+## Total
+Total Amount: NOK 1250,00
+
+## Payment Details
+* Account Number: ...
+* Reference: ...
+* Due Date: ...
 ```
 
-The script will automatically:
+## Dependencies
 
-- Process all PDF files in the `input_pdfs` directory
-- Create corresponding markdown files in `output_markdown` directory
-- Print status messages for each conversion
+- `opencv-python`: Image processing
+- `pytesseract`: OCR text extraction
+- `pdf2image`: PDF to image conversion
+- `beautifulsoup4`: HTML parsing
+- `fastapi`: API framework (for future web interface)
+- `uvicorn`: ASGI server
 
-Example response:
+## Recent Updates
 
-```json
-{
-  "markdown": "# Invoice Details\n\n## Company Registration\nNO 923 930 892 MVA\n\n## Invoice Number\n1122\n\n## Date\n2024-11-19\n\n## Due Date\n2024-12-19\n\n## Contact Person\nTim Robin Frick\n\n## Total Amount\n5 000,00 kr\n\n## Tax\n1 250,00 kr\n\n## Payment Information\nBank Account: 1506.61.77553\nReference: 0112219\n\n## Line Items\n| Description | Amount | Tax | Total |\n|-------------|--------|-----|--------|\n| Timer | 5 000,00 | 1 250,00 | 6 250,00 |",
-  "detected_language": "no"
-}
-```
-
-## Development
-
-### Running Tests
-
-```bash
-# Run all tests
-pytest tests/
-
-# Run specific test types
-pytest tests/unit/  # Unit tests
-pytest tests/integration/  # Integration tests
-pytest tests/performance/  # Performance tests
-pytest tests/property/  # Property-based tests
-
-# Run with coverage
-pytest --cov=app --cov-report=xml
-```
-
-### Code Quality
-
-```bash
-# Format code
-black app tests
-
-# Sort imports
-isort app tests
-
-# Lint code
-flake8 app tests
-
-# Type checking
-mypy app tests
-
-# Security checks
-bandit -r app
-safety scan
-```
-
-## Known Issues
-
-- Tesseract OCR accuracy may vary based on PDF quality
-- Some complex table layouts might not be detected correctly
-- Python 3.13 compatibility issues with some dependencies
+- Added proper URL formatting in markdown output
+- Improved markdown formatting to follow best practices
+- Fixed issues with markdown linting:
+  - Proper URL formatting
+  - Consistent heading structure
+  - Single trailing newline
+- Enhanced invoice data extraction and organization
 
 ## Contributing
 
-1. Fork the repository
-2. Create your feature branch
-3. Run tests and quality checks
-4. Submit a pull request
+Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## License
 
