@@ -1,125 +1,157 @@
+from abc import ABC, abstractmethod
+from decimal import Decimal
+from typing import Dict, Any
 import json
 import xml.etree.ElementTree as ET
-from datetime import datetime
-from typing import Any, Dict, Optional
-
 from .validators import DataFormatter
 
 
-class BaseFormatter:
+class BaseFormatter(ABC):
+    """Base class for all formatters."""
+
     def __init__(self):
+        """Initialize the formatter with a data formatter."""
         self.data_formatter = DataFormatter()
 
-    def format_field(self, field_type: str, value: str, language: str = "no") -> str:
-        return self.data_formatter.format_field(field_type, value, language)
+    @abstractmethod
+    def format_output(self, data: Dict[str, Any], tables: list = None) -> str:
+        """Format the extracted data into the desired output format."""
+        pass
 
+    @staticmethod
+    def format_currency(amount: str) -> str:
+        """Format currency values."""
+        try:
+            value = Decimal(amount.replace(" ", "").replace(",", "."))
+            return f"{value:,.2f}"
+        except (ValueError, Decimal.InvalidOperation):
+            return amount
 
-class MarkdownFormatter(BaseFormatter):
-    def format(self, data: Dict[str, Any], tables: list = None) -> str:
-        markdown = "# Invoice Details\n\n"
+    @staticmethod
+    def format_date(date_str: str) -> str:
+        """Format date strings."""
+        if not date_str:
+            return ""
+        # Add date formatting logic here
+        return date_str
 
-        # Company Information
-        if data.get("registration"):
-            markdown += f"## Company Registration\n{self.format_field('org_number', data['registration'])}\n\n"
+    @staticmethod
+    def format_phone(phone: str) -> str:
+        """Format phone numbers."""
+        digits = "".join(filter(str.isdigit, phone))
+        if len(digits) == 8:
+            return f"{digits[:2]} {digits[2:4]} {digits[4:6]} {digits[6:]}"
+        return phone
 
-        # Basic Invoice Information
-        markdown += f"## Invoice Number\n{data.get('invoice_number', '')}\n\n"
-        markdown += f"## Date\n{data.get('date', '')}\n\n"
-        if data.get("due_date"):
-            markdown += f"## Due Date\n{data['due_date']}\n\n"
+    @staticmethod
+    def clean_text(text: str) -> str:
+        """Clean and normalize text."""
+        if not text:
+            return ""
+        return " ".join(text.split())
 
-        # Contact Information
-        if data.get("contact_person"):
-            markdown += f"## Contact Person\n{data['contact_person']}\n\n"
-
-        # Financial Information
-        if data.get("total"):
-            markdown += f"## Total Amount\n{self.format_field('currency', data['total'])}\n\n"
-        if data.get("tax"):
-            markdown += f"## Tax\n{self.format_field('currency', data['tax'])}\n\n"
-
-        # Payment Information
-        markdown += "## Payment Information\n"
-        if data.get("bank_account"):
-            markdown += f"Bank Account: {data['bank_account']}\n"
-        if data.get("reference"):
-            markdown += f"Reference: {self.format_field('kid', data['reference'])}\n\n"
-
-        # Add tables if present
-        if tables:
-            markdown += "## Line Items\n\n"
-            for table in tables:
-                markdown += table + "\n"
-
-        return markdown
+    @staticmethod
+    def format_address(address: str) -> str:
+        """Format address strings."""
+        if not address:
+            return ""
+        parts = [p.strip() for p in address.split(",")]
+        return "\n".join(p for p in parts if p)
 
 
 class JSONFormatter(BaseFormatter):
-    def format(self, data: Dict[str, Any], tables: list = None) -> str:
+    """Format data as JSON."""
+
+    def format_output(self, data: Dict[str, Any], tables: list = None) -> str:
+        """Format the data into JSON format."""
         formatted_data = {
             "invoice_details": {
-                "company_registration": self.format_field(
-                    "org_number", data.get("registration", "")
+                "company_registration": (
+                    self.data_formatter.format_field(
+                        "org_number",
+                        data.get("registration", "")
+                    )
                 ),
                 "invoice_number": data.get("invoice_number", ""),
-                "date": data.get("date", ""),
+                "issue_date": data.get("issue_date", ""),
                 "due_date": data.get("due_date", ""),
                 "contact_person": data.get("contact_person", ""),
                 "financial": {
-                    "total_amount": self.format_field("currency", data.get("total", "")),
-                    "tax": self.format_field("currency", data.get("tax", "")),
+                    "total_amount": self.format_currency(data.get("total", "")),
+                    "tax": self.format_currency(data.get("tax", "")),
                 },
                 "payment": {
                     "bank_account": data.get("bank_account", ""),
-                    "reference": self.format_field("kid", data.get("reference", "")),
+                    "reference": (
+                        self.data_formatter.format_field(
+                            "kid",
+                            data.get("reference", "")
+                        )
+                    ),
                 },
             }
         }
 
         if tables:
-            formatted_data["line_items"] = tables
+            formatted_data["tables"] = []
+            for table in tables:
+                table_data = {
+                    "headers": table.headers if table.headers else [],
+                    "rows": [
+                        [cell.value for cell in row.cells]
+                        for row in table.rows
+                    ]
+                }
+                formatted_data["tables"].append(table_data)
 
-        return json.dumps(formatted_data, indent=2, ensure_ascii=False)
+        return json.dumps(formatted_data, indent=2)
 
 
 class XMLFormatter(BaseFormatter):
-    def format(self, data: Dict[str, Any], tables: list = None) -> str:
+    """Format data as XML."""
+
+    def format_output(self, data: Dict[str, Any], tables: list = None) -> str:
+        """Format the data into XML format."""
         root = ET.Element("invoice")
 
         # Company Information
-        company = ET.SubElement(root, "company_registration")
-        company.text = self.format_field("org_number", data.get("registration", ""))
+        company = ET.SubElement(root, "company")
+        reg = self.data_formatter.format_field("org_number", data.get("registration", ""))
+        company.text = reg
 
         # Basic Information
         details = ET.SubElement(root, "details")
         ET.SubElement(details, "invoice_number").text = data.get("invoice_number", "")
-        ET.SubElement(details, "date").text = data.get("date", "")
+        ET.SubElement(details, "issue_date").text = data.get("issue_date", "")
         ET.SubElement(details, "due_date").text = data.get("due_date", "")
-
-        # Contact Information
-        if data.get("contact_person"):
-            contact = ET.SubElement(root, "contact")
-            ET.SubElement(contact, "person").text = data["contact_person"]
+        ET.SubElement(details, "contact_person").text = data.get("contact_person", "")
 
         # Financial Information
         financial = ET.SubElement(root, "financial")
-        ET.SubElement(financial, "total_amount").text = self.format_field(
-            "currency", data.get("total", "")
-        )
-        ET.SubElement(financial, "tax").text = self.format_field("currency", data.get("tax", ""))
+        total = self.format_currency(data.get("total", ""))
+        tax = self.format_currency(data.get("tax", ""))
+        ET.SubElement(financial, "total_amount").text = total
+        ET.SubElement(financial, "tax").text = tax
 
         # Payment Information
         payment = ET.SubElement(root, "payment")
         ET.SubElement(payment, "bank_account").text = data.get("bank_account", "")
-        ET.SubElement(payment, "reference").text = self.format_field(
-            "kid", data.get("reference", "")
-        )
+        ref = self.data_formatter.format_field("kid", data.get("reference", ""))
+        ET.SubElement(payment, "reference").text = ref
 
-        # Line Items
+        # Add tables if present
         if tables:
-            line_items = ET.SubElement(root, "line_items")
-            for i, table in enumerate(tables):
-                table_elem = ET.SubElement(line_items, f"table_{i+1}")
-                table_elem.text = table
+            tables_elem = ET.SubElement(root, "tables")
+            for table in tables:
+                table_elem = ET.SubElement(tables_elem, "table")
+                if table.headers:
+                    headers_elem = ET.SubElement(table_elem, "headers")
+                    for header in table.headers:
+                        ET.SubElement(headers_elem, "header").text = header
+                rows_elem = ET.SubElement(table_elem, "rows")
+                for row in table.rows:
+                    row_elem = ET.SubElement(rows_elem, "row")
+                    for cell in row.cells:
+                        ET.SubElement(row_elem, "cell").text = cell.value
 
         return ET.tostring(root, encoding="unicode", method="xml")

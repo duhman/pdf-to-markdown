@@ -1,69 +1,59 @@
 import csv
 from io import StringIO
-from typing import Any, Dict, List
+from typing import Dict, Any
 
-from ..validators import DataFormatter
+from ..formatters import BaseFormatter
 
 
-class CSVFormatter:
-    def __init__(self):
-        self.data_formatter = DataFormatter()
+class CSVFormatter(BaseFormatter):
+    """Format data as CSV."""
 
-    def format(self, data: Dict[str, Any], tables: list = None) -> str:
+    def format_output(self, data: Dict[str, Any], tables: list = None) -> str:
+        """Format the data into CSV format."""
         output = StringIO()
-        writer = csv.writer(output)
+        writer = csv.writer(output, delimiter=",", quotechar='"', quoting=csv.QUOTE_MINIMAL)
 
-        # Write header
-        writer.writerow(["Field", "Value"])
+        # Write headers
+        headers = ["Field", "Value"]
+        writer.writerow(headers)
 
-        # Company Information
+        # Write company information
         if data.get("registration"):
-            writer.writerow(
-                [
-                    "Company Registration",
-                    self.data_formatter.format_field("org_number", data["registration"]),
-                ]
-            )
+            writer.writerow([
+                "Company Registration",
+                self.data_formatter.format_field("org_number", data["registration"])
+            ])
 
-        # Basic Invoice Information
+        # Write basic invoice information
         writer.writerow(["Invoice Number", data.get("invoice_number", "")])
-        writer.writerow(["Date", data.get("date", "")])
-        if data.get("due_date"):
-            writer.writerow(["Due Date", data["due_date"]])
+        writer.writerow(["Issue Date", data.get("issue_date", "")])
+        writer.writerow(["Due Date", data.get("due_date", "")])
+        writer.writerow(["Contact Person", data.get("contact_person", "")])
 
-        # Contact Information
-        if data.get("contact_person"):
-            writer.writerow(["Contact Person", data["contact_person"]])
-
-        # Financial Information
+        # Write financial information
         if data.get("total"):
-            writer.writerow(
-                ["Total Amount", self.data_formatter.format_field("currency", data["total"])]
-            )
+            writer.writerow(["Total Amount", self.format_currency(data["total"])])
         if data.get("tax"):
-            writer.writerow(["Tax", self.data_formatter.format_field("currency", data["tax"])])
+            writer.writerow(["Tax", self.format_currency(data["tax"])])
 
-        # Payment Information
+        # Write payment information
         if data.get("bank_account"):
-            writer.writerow(
-                [
-                    "Bank Account",
-                    self.data_formatter.format_field("account_number", data["bank_account"]),
-                ]
-            )
+            writer.writerow(["Bank Account", data["bank_account"]])
         if data.get("reference"):
-            writer.writerow(
-                ["Reference", self.data_formatter.format_field("kid", data["reference"])]
-            )
+            writer.writerow([
+                "Reference",
+                self.data_formatter.format_field("kid", data["reference"])
+            ])
 
         # Add tables if present
         if tables:
             writer.writerow([])  # Empty row for separation
-            writer.writerow(["Line Items"])
+            writer.writerow(["Table Data"])
             for table in tables:
-                writer.writerow([])
-                for line in table.split("\n"):
-                    if line.strip():
-                        writer.writerow([line.strip()])
+                writer.writerow([])  # Empty row between tables
+                if table.headers:
+                    writer.writerow(table.headers)
+                for row in table.rows:
+                    writer.writerow([cell.value for cell in row.cells])
 
         return output.getvalue()

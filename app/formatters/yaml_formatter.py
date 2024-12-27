@@ -1,40 +1,46 @@
-from typing import Any, Dict, List
-
+from typing import Dict, Any
 import yaml
 
-from ..validators import DataFormatter
+from ..formatters import BaseFormatter
 
 
-class YAMLFormatter:
-    def __init__(self):
-        self.data_formatter = DataFormatter()
+class YAMLFormatter(BaseFormatter):
+    """Format data as YAML."""
 
-    def format(self, data: Dict[str, Any], tables: list = None) -> str:
+    def format_output(self, data: Dict[str, Any], tables: list = None) -> str:
+        """Format the data into YAML format."""
         formatted_data = {
             "invoice_details": {
                 "company_registration": self.data_formatter.format_field(
                     "org_number", data.get("registration", "")
                 ),
                 "invoice_number": data.get("invoice_number", ""),
-                "date": data.get("date", ""),
+                "issue_date": data.get("issue_date", ""),
                 "due_date": data.get("due_date", ""),
                 "contact_person": data.get("contact_person", ""),
                 "financial": {
-                    "total_amount": self.data_formatter.format_field(
-                        "currency", data.get("total", "")
-                    ),
-                    "tax": self.data_formatter.format_field("currency", data.get("tax", "")),
+                    "total_amount": self.format_currency(data.get("total", "")),
+                    "tax": self.format_currency(data.get("tax", "")),
                 },
                 "payment": {
-                    "bank_account": self.data_formatter.format_field(
-                        "account_number", data.get("bank_account", "")
+                    "bank_account": data.get("bank_account", ""),
+                    "reference": self.data_formatter.format_field(
+                        "kid", data.get("reference", "")
                     ),
-                    "reference": self.data_formatter.format_field("kid", data.get("reference", "")),
                 },
             }
         }
 
         if tables:
-            formatted_data["line_items"] = tables
+            formatted_data["tables"] = []
+            for table in tables:
+                table_data = {
+                    "headers": table.headers if table.headers else [],
+                    "rows": [
+                        [cell.value for cell in row.cells]
+                        for row in table.rows
+                    ]
+                }
+                formatted_data["tables"].append(table_data)
 
         return yaml.dump(formatted_data, allow_unicode=True, sort_keys=False)
