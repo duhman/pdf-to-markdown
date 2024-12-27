@@ -44,68 +44,124 @@ class MarkdownGenerator:
                     return line.split(keyword)[-1].strip().strip(':').strip()
         return ''
 
-    def generate_markdown(self, text: str, language: str) -> str:
+    def generate_markdown(self, text: str, language: str = 'en') -> str:
         """Generate markdown from extracted text."""
-        keywords = self.invoice_keywords[language]
-        
-        # Extract all fields
-        fields = {
-            'invoice_number': self._extract_field(text, keywords['invoice_number']),
-            'date': self._extract_field(text, keywords['date']),
-            'total': self._extract_field(text, keywords['total']),
-            'tax': self._extract_field(text, keywords['tax']),
-            'project': self._extract_field(text, keywords['project']),
-            'delivery_address': self._extract_field(text, keywords['delivery_address']),
-            'delivery_date': self._extract_field(text, keywords['delivery_date']),
-            'contract_amount': self._extract_field(text, keywords['contract_amount']),
-            'bank_account': self._extract_field(text, keywords['bank_account']),
-            'registration': self._extract_field(text, keywords['registration']),
-            'contact_person': self._extract_field(text, keywords['contact_person']),
-            'due_date': self._extract_field(text, keywords['due_date']),
-            'reference': self._extract_field(text, keywords['reference'])
+        sections = []
+        sections.append("# Invoice Details\n")
+
+        # Extract invoice number
+        invoice_number = self._extract_invoice_number(text, language)
+        if invoice_number:
+            sections.append("## Invoice Number")
+            sections.append(invoice_number + "\n")
+
+        # Extract date
+        date = self._extract_date(text, language)
+        if date:
+            sections.append("## Date")
+            sections.append(date + "\n")
+
+        # Extract contact person
+        contact = self._extract_contact_person(text, language)
+        if contact:
+            sections.append("## Contact Person")
+            sections.append(contact + "\n")
+
+        # Extract payment information
+        payment_info = self._extract_payment_info(text, language)
+        if payment_info:
+            sections.append("## Payment Information")
+            sections.append(payment_info + "\n")
+
+        # Extract total amount
+        total = self._extract_total_amount(text, language)
+        if total:
+            sections.append("## Total Amount")
+            sections.append(total + "\n")
+
+        # Extract tax information
+        tax = self._extract_tax(text, language)
+        if tax:
+            sections.append("## Tax")
+            sections.append(tax + "\n")
+
+        # Extract delivery information
+        delivery = self._extract_delivery_info(text, language)
+        if delivery:
+            sections.append("## Delivery Information")
+            sections.append(delivery + "\n")
+
+        # Extract line items
+        line_items = self._extract_line_items(text, language)
+        if line_items:
+            sections.append("## Line Items")
+            sections.append(line_items + "\n")
+
+        return "\n".join(sections)
+
+    def _extract_invoice_number(self, text: str, language: str) -> str:
+        patterns = {
+            'en': r'Invoice\s*#?:?\s*([A-Za-z0-9-]+)',
+            'no': r'Faktura(?:nr|nummer)?\.?:?\s*([A-Za-z0-9-]+)'
         }
+        return self._extract_with_pattern(text, patterns.get(language, patterns['en']))
 
-        # Generate markdown
-        markdown = "# Invoice Details\n\n"
-        
-        # Company Information
-        if fields['registration']:
-            markdown += f"## Company Registration\n{fields['registration']}\n\n"
-            
-        # Basic Invoice Information
-        markdown += f"## Invoice Number\n{fields['invoice_number']}\n\n"
-        markdown += f"## Date\n{fields['date']}\n\n"
-        if fields['due_date']:
-            markdown += f"## Due Date\n{fields['due_date']}\n\n"
-            
-        # Project Information
-        if fields['project']:
-            markdown += f"## Project Details\n{fields['project']}\n\n"
-        
-        # Contact Information
-        if fields['contact_person']:
-            markdown += f"## Contact Person\n{fields['contact_person']}\n\n"
-            
-        # Delivery Information
-        if fields['delivery_address'] or fields['delivery_date']:
-            markdown += "## Delivery Information\n"
-            if fields['delivery_address']:
-                markdown += f"Address: {fields['delivery_address']}\n"
-            if fields['delivery_date']:
-                markdown += f"Date: {fields['delivery_date']}\n"
-            markdown += "\n"
-            
-        # Financial Information
-        if fields['contract_amount']:
-            markdown += f"## Contract Amount\n{fields['contract_amount']}\n\n"
-        markdown += f"## Total Amount\n{fields['total']}\n\n"
-        markdown += f"## Tax\n{fields['tax']}\n\n"
-            
-        # Payment Information
-        markdown += "## Payment Information\n"
-        if fields['bank_account']:
-            markdown += f"Bank Account: {fields['bank_account']}\n"
-        if fields['reference']:
-            markdown += f"Reference: {fields['reference']}\n"
+    def _extract_date(self, text: str, language: str) -> str:
+        patterns = {
+            'en': r'Date:?\s*(\d{4}-\d{2}-\d{2}|\d{2}/\d{2}/\d{4}|\d{2}\.\d{2}\.\d{4})',
+            'no': r'(?:Faktura)?dato:?\s*(\d{4}-\d{2}-\d{2}|\d{2}/\d{2}/\d{4}|\d{2}\.\d{2}\.\d{4})'
+        }
+        return self._extract_with_pattern(text, patterns.get(language, patterns['en']))
 
-        return markdown
+    def _extract_contact_person(self, text: str, language: str) -> str:
+        patterns = {
+            'en': r'Contact(?:\s*Person)?:?\s*([A-Za-z\s]+)',
+            'no': r'(?:Vår|Deres)\s*kontakt:?\s*([A-Za-z\søæåØÆÅ]+)'
+        }
+        return self._extract_with_pattern(text, patterns.get(language, patterns['en']))
+
+    def _extract_payment_info(self, text: str, language: str) -> str:
+        patterns = {
+            'en': r'(?:Account|Reference|Payment).*?:?\s*([A-Za-z0-9\s\.]+)',
+            'no': r'(?:Kontonummer|KID|Betalingsinformasjon).*?:?\s*([A-Za-z0-9\s\.]+)'
+        }
+        matches = re.finditer(patterns.get(language, patterns['en']), text, re.IGNORECASE | re.MULTILINE)
+        payment_info = []
+        for match in matches:
+            if match.group():
+                payment_info.append(match.group().strip())
+        return "\n".join(payment_info) if payment_info else ""
+
+    def _extract_total_amount(self, text: str, language: str) -> str:
+        patterns = {
+            'en': r'Total\s*Amount:?\s*([\d\s,.]+(?:\s*[A-Za-z]+)?)',
+            'no': r'(?:Sum|Beløp|Kontraktsum).*?:?\s*([\d\s,.]+(?:\s*[A-Za-z]+)?)'
+        }
+        return self._extract_with_pattern(text, patterns.get(language, patterns['en']))
+
+    def _extract_tax(self, text: str, language: str) -> str:
+        patterns = {
+            'en': r'(?:VAT|Tax):?\s*([\d\s,.]+(?:\s*[A-Za-z]+)?)',
+            'no': r'(?:MVA|Merverdiavgift):?\s*([\d\s,.]+(?:\s*[A-Za-z]+)?|NO\s*\d{3}\s*\d{3}\s*\d{3}\s*MVA)'
+        }
+        return self._extract_with_pattern(text, patterns.get(language, patterns['en']))
+
+    def _extract_delivery_info(self, text: str, language: str) -> str:
+        patterns = {
+            'en': r'Delivery\s*Address:?\s*([A-Za-z0-9\s,\.]+)',
+            'no': r'Leveranse(?:adresse)?:?\s*([A-Za-z0-9\søæåØÆÅ,\.]+)'
+        }
+        return self._extract_with_pattern(text, patterns.get(language, patterns['en']))
+
+    def _extract_line_items(self, text: str, language: str) -> str:
+        # Extract any tabular data or itemized list
+        lines = text.split('\n')
+        items = []
+        for line in lines:
+            if re.search(r'\d+[\s,\.]+\d+', line):  # Line contains numbers that look like amounts
+                items.append(line.strip())
+        return "\n".join(items) if items else ""
+
+    def _extract_with_pattern(self, text: str, pattern: str) -> str:
+        match = re.search(pattern, text, re.IGNORECASE | re.MULTILINE)
+        return match.group(1).strip() if match else ""

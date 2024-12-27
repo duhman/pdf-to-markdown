@@ -1,34 +1,57 @@
-from fastapi import FastAPI, UploadFile, File
+from fastapi import FastAPI, UploadFile, File, BackgroundTasks
 from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.exceptions import HTTPException
+import logging
 import uvicorn
 from app.pdf_processor import PDFProcessor
 from app.markdown_generator import MarkdownGenerator
 
+# Create a logger
+logger = logging.getLogger(__name__)
+
 app = FastAPI(title="PDF to Markdown Converter")
-pdf_processor = PDFProcessor()
-markdown_generator = MarkdownGenerator()
+
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Create a background tasks object
+background_tasks = BackgroundTasks()
 
 @app.post("/convert")
 async def convert_pdf(file: UploadFile = File(...)):
+    """Convert a PDF file to markdown."""
     try:
-        # Process the PDF file
-        text_content = await pdf_processor.process_pdf(file)
-        
-        # Detect language
-        language = pdf_processor.detect_language(text_content)
+        # Read file content
+        content = await file.read()
+        if not content:
+            raise HTTPException(status_code=400, detail="Empty file")
+
+        # Process PDF
+        processor = PDFProcessor()
+        text = await processor.process_pdf(content)
         
         # Generate markdown
-        markdown_content = markdown_generator.generate_markdown(text_content, language)
+        generator = MarkdownGenerator()
+        language = processor.detect_language(text)
+        markdown = generator.generate_markdown(text, language)
         
-        return JSONResponse(content={
-            "markdown": markdown_content,
-            "detected_language": language
-        })
+        return {"markdown": markdown, "language": language}
+        
     except Exception as e:
-        return JSONResponse(
-            status_code=500,
-            content={"error": str(e)}
-        )
+        logger.error(f"Error processing PDF: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/health")
+async def health_check():
+    """Health check endpoint."""
+    return {"status": "healthy"}
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run(app, host="0.0.0.0", port=8000)

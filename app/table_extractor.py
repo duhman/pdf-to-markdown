@@ -1,4 +1,4 @@
-from typing import List, Dict, Optional
+from typing import List, Dict
 import re
 from dataclasses import dataclass
 
@@ -33,10 +33,15 @@ class TableExtractor:
                     current_table = [cells]
                 else:
                     # Continue existing table if structure matches
-                    if abs(len(cells) - len(current_table[0])) <= 1:
+                    # Allow for some flexibility in column count
+                    max_cols = max(len(row) for row in current_table)
+                    if len(cells) >= max_cols - 1 and len(cells) <= max_cols + 1:
+                        # Pad cells if necessary
+                        while len(cells) < max_cols:
+                            cells.append('')
                         current_table.append(cells)
                     else:
-                        # Structure changed, end current table
+                        # Structure changed significantly, end current table
                         if len(current_table) >= 2:  # Minimum 2 rows
                             tables.append(current_table)
                         current_table = [cells]
@@ -50,18 +55,43 @@ class TableExtractor:
         if current_table and len(current_table) >= 2:
             tables.append(current_table)
         
-        return tables
+        # Normalize table structure
+        normalized_tables = []
+        for table in tables:
+            max_cols = max(len(row) for row in table)
+            normalized_table = []
+            for row in table:
+                normalized_row = row + [''] * (max_cols - len(row))
+                normalized_table.append(normalized_row)
+            normalized_tables.append(normalized_table)
+        
+        return normalized_tables
 
     def _split_into_cells(self, line: str) -> List[str]:
-        """Split line into potential table cells."""
-        # First try splitting by multiple spaces
-        cells = [cell.strip() for cell in re.split(r'\s{2,}', line.strip())]
-        
-        # If we got only one cell, try other delimiters
-        if len(cells) < 2:
-            cells = [cell.strip() for cell in re.split(r'[|;,\t]', line.strip())]
-        
-        return [cell for cell in cells if cell]
+        """Split a line into cells based on delimiters and spacing."""
+        # First try splitting by common delimiters
+        if '|' in line:
+            cells = [cell.strip() for cell in line.split('|')]
+        else:
+            # Split by multiple spaces and preserve decimal numbers
+            pattern = r'(?:\s{2,}|\t+)'
+            cells = [cell.strip() for cell in re.split(pattern, line) if cell.strip()]
+            
+        # Handle decimal numbers (both . and , as decimal separators)
+        final_cells = []
+        for cell in cells:
+            # Skip empty cells
+            if not cell:
+                continue
+                
+            # Check if the cell might be a decimal number with comma
+            if ',' in cell and not re.search(r'[a-zA-Z]', cell):
+                # Keep the number as is, don't split on comma
+                final_cells.append(cell)
+            else:
+                final_cells.append(cell)
+                
+        return [cell for cell in final_cells if cell]
 
     def identify_columns(self, table: List[List[str]]) -> Dict[int, str]:
         """Identify column types based on content."""

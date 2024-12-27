@@ -5,12 +5,14 @@ A FastAPI application that converts PDF invoices to structured markdown document
 ## Features
 
 ### Core Features
+
 - Convert PDF invoices to structured markdown
 - Multi-language support (Norwegian and English)
 - Automatic language detection
 - RESTful API interface
 
 ### Advanced Features
+
 - Smart field extraction and validation
   - Norwegian organization number (MVA) validation
   - KID number validation
@@ -69,6 +71,7 @@ curl -X POST "http://localhost:8000/convert" \
 ```
 
 Example response:
+
 ```json
 {
   "markdown": "# Invoice Details\n\n## Company Registration\nNO 923 930 892 MVA\n\n## Invoice Number\n1122\n\n## Date\n2024-11-19\n\n## Due Date\n2024-12-19\n\n## Contact Person\nTim Robin Frick\n\n## Total Amount\n5 000,00 kr\n\n## Tax\n1 250,00 kr\n\n## Payment Information\nBank Account: 1506.61.77553\nReference: 0112219\n\n## Line Items\n| Description | Amount | Tax | Total |\n|-------------|--------|-----|--------|\n| Timer | 5 000,00 | 1 250,00 | 6 250,00 |",

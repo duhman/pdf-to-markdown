@@ -3,9 +3,16 @@ import os
 from pdf2image import convert_from_bytes
 import pytesseract
 from langdetect import detect
-from typing import List
+from typing import List, Union
 import io
 from fastapi import UploadFile
+import logging
+import numpy as np
+import cv2
+from fastapi import HTTPException
+
+# Initialize logger
+logger = logging.getLogger(__name__)
 
 class PDFProcessor:
     def __init__(self):
@@ -14,31 +21,42 @@ class PDFProcessor:
             'en': 'eng',
             'no': 'nor'
         }
+        self.ocr = pytesseract
 
-    async def process_pdf(self, file: UploadFile) -> str:
-        # Read the uploaded file
-        content = await file.read()
-        
-        # Create a temporary directory for processing
-        with tempfile.TemporaryDirectory() as temp_dir:
+    async def process_pdf(self, file: Union[UploadFile, bytes]) -> str:
+        """Process PDF file and extract text."""
+        try:
+            if isinstance(file, UploadFile):
+                content = await file.read()
+            else:
+                content = file
+
+            if not content:
+                raise HTTPException(status_code=400, detail="Empty PDF file")
+
             # Convert PDF to images
             images = convert_from_bytes(content)
-            
+            if not images:
+                raise HTTPException(status_code=400, detail="Invalid PDF file")
+
             # Process each page
             text_content = []
-            for i, image in enumerate(images):
-                # Save image temporarily
-                image_path = os.path.join(temp_dir, f'page_{i}.png')
-                image.save(image_path, 'PNG')
+            for image in images:
+                # Convert PIL image to numpy array for OpenCV
+                image_np = np.array(image)
                 
-                # Perform OCR with multiple language support
-                text = pytesseract.image_to_string(
-                    image_path,
+                # Process with OCR
+                page_text = self.ocr.image_to_string(
+                    image_np,
                     lang='+'.join(self.languages.values())
                 )
-                text_content.append(text)
-            
-            return '\n'.join(text_content)
+                text_content.append(page_text)
+
+            return "\n".join(text_content)
+
+        except Exception as e:
+            logger.error(f"Error converting PDF: {str(e)}")
+            raise HTTPException(status_code=400, detail="Invalid PDF file")
 
     def detect_language(self, text: str) -> str:
         try:
