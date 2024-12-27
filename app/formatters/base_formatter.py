@@ -1,7 +1,7 @@
 """Base formatter class for output formatting."""
 
 from abc import ABC, abstractmethod
-from typing import Any, List, Union
+from typing import List, Union
 
 
 class BaseFormatter(ABC):

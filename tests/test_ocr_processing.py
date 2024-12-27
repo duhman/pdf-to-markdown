@@ -2,7 +2,6 @@
 
 import cv2
 import numpy as np
-import numpy.typing as npt
 import pytest
 from numpy.typing import NDArray
 

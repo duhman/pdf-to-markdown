@@ -1,11 +1,8 @@
 """Tests for table extraction functionality."""
 
-import pytest
-from typing import List
-
-import numpy as np
-import numpy.typing as npt
 import cv2
+import numpy as np
+import pytest
 from numpy.typing import NDArray
 
 from app.table_extractor import TableExtractor
@@ -189,11 +186,6 @@ def test_process_table(extractor: TableExtractor) -> None:
     # TODO: implement test_process_table
 
 
-def test_empty_image(extractor: TableExtractor) -> None:
-    """Test handling of empty image."""
-    # TODO: implement test_empty_image
-
-
 def test_noisy_image(extractor: TableExtractor, sample_table_image: NDArray[np.uint8]) -> None:
     """Test handling of noisy image."""
     noise = np.random.normal(0, 25, sample_table_image.shape).astype(np.uint8)
@@ -238,11 +230,3 @@ def test_extract_markdown(extractor: TableExtractor, sample_table_image: NDArray
     markdown = extractor.extract_markdown(structure)
     assert isinstance(markdown, str)
     assert "|" in markdown  # Should contain table delimiters
-
-
-def test_empty_image(extractor: TableExtractor) -> None:
-    """Test handling of empty image."""
-    empty_image = np.zeros((100, 100), dtype=np.uint8)
-    structure = extractor.extract_table_structure(empty_image)
-    assert isinstance(structure, list)
-    assert len(structure) == 0

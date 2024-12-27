@@ -2,7 +2,7 @@
 
 import asyncio
 import time
-from typing import Any, Callable, List, Tuple
+from typing import Callable, List
 
 import pytest
 

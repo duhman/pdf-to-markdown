@@ -1,10 +1,10 @@
 import logging
+from typing import Dict
 
 import uvicorn
 from fastapi import BackgroundTasks, FastAPI, File, UploadFile
 from fastapi.exceptions import HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from typing import Dict
 
 from app.markdown_generator import MarkdownGenerator
 from app.pdf_processor import PDFProcessor

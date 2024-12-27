@@ -1,8 +1,7 @@
 """Property-based tests for pdf-to-markdown."""
 
-from hypothesis import given
-from hypothesis import strategies as st
-from typing import List, Dict
+from hypothesis import given, strategies as st
+from typing import List
 
 from app.markdown_generator import MarkdownGenerator
 from app.pdf_processor import PDFProcessor
