@@ -84,6 +84,7 @@ python3 convert_pdf.py
 ```
 
 The script will automatically:
+
 - Process all PDF files in the `input_pdfs` directory
 - Create corresponding markdown files in `output_markdown` directory
 - Print status messages for each conversion

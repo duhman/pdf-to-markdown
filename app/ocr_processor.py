@@ -11,7 +11,7 @@ from pdf2image import convert_from_bytes  # type: ignore
 
 
 class OCRProcessor:
-    """OCR processor for extracting text from PDFs."""
+    """Process OCR on PDF documents."""
 
     def __init__(self) -> None:
         """Initialize OCR processor."""
@@ -325,3 +325,72 @@ class OCRProcessor:
         return cv2.warpAffine(
             image, matrix, (width, height), flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_REPLICATE
         )
+
+    def detect_document_type(self, text: str) -> str:
+        """Detect the type of document based on its content.
+        
+        Args:
+            text: The OCR'd text from the document
+            
+        Returns:
+            str: Document type ('invoice', 'declaration', or 'unknown')
+        """
+        text = text.lower()
+        if "faktura" in text:
+            return "invoice"
+        elif "samsvarserklæring" in text:
+            return "declaration"
+        return "unknown"
+
+    def extract_line_items(self, text: str) -> List[Dict[str, Any]]:
+        """Extract line items from invoice text.
+        
+        Args:
+            text: The OCR'd text from the document
+            
+        Returns:
+            List of dictionaries containing line item details
+        """
+        items = []
+        # Match pattern for reference numbers and hex IDs
+        pattern = r"((?:01|02)-11-[\w\d]+)\s*(.*?)\s*([A-F0-9]{40})"
+        matches = re.finditer(pattern, text)
+        
+        for match in matches:
+            ref_num, description, hex_id = match.groups()
+            items.append({
+                "reference_number": ref_num,
+                "description": description.strip(),
+                "identifier": hex_id,
+            })
+        
+        return items
+
+    def extract_declaration_metadata(self, text: str) -> Dict[str, Any]:
+        """Extract metadata from declaration document.
+        
+        Args:
+            text: The OCR'd text from the document
+            
+        Returns:
+            Dictionary containing declaration metadata
+        """
+        metadata = {
+            "type": "declaration",
+            "installation_type": None,
+            "customer": None,
+            "address": None,
+            "reference": None,
+        }
+        
+        # Extract installation type
+        match = re.search(r"Type anlegg:\s*(\S+)", text)
+        if match:
+            metadata["installation_type"] = match.group(1)
+            
+        # Extract customer info
+        match = re.search(r"Kunde.*?Navn\s*(\S+.*?)(?:\s{2,}|$)", text, re.DOTALL)
+        if match:
+            metadata["customer"] = match.group(1).strip()
+            
+        return metadata
