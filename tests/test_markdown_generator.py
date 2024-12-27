@@ -3,7 +3,7 @@
 from app.markdown_generator import MarkdownGenerator
 
 
-def test_markdown_generator_initialization():
+def test_markdown_generator_initialization() -> None:
     """Test markdown generator initialization."""
     generator = MarkdownGenerator()
     assert generator.invoice_keywords is not None
@@ -11,7 +11,7 @@ def test_markdown_generator_initialization():
     assert "no" in generator.invoice_keywords
 
 
-def test_generate_markdown_english():
+def test_generate_markdown_english() -> str:
     """Test markdown generation in English."""
     generator = MarkdownGenerator()
     test_text = """
@@ -31,9 +31,10 @@ def test_generate_markdown_english():
     assert "$100.00" in markdown
     assert "## Tax" in markdown
     assert "$20.00" in markdown
+    return markdown
 
 
-def test_generate_markdown_norwegian():
+def test_generate_markdown_norwegian() -> str:
     """Test markdown generation in Norwegian."""
     generator = MarkdownGenerator()
     test_text = """
@@ -53,12 +54,14 @@ def test_generate_markdown_norwegian():
     assert "1000,00 kr" in markdown
     assert "## Tax" in markdown
     assert "250,00 kr" in markdown
+    return markdown
 
 
-def test_generate_markdown():
+def test_generate_markdown() -> str:
     """Test markdown generation."""
     generator = MarkdownGenerator()
     text = "Hello\nWorld"
     markdown = generator.generate_markdown(text, "en")
     assert "Hello" in markdown
     assert "World" in markdown
+    return markdown

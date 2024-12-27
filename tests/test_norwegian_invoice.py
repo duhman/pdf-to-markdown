@@ -3,7 +3,7 @@
 from app.markdown_generator import MarkdownGenerator
 
 
-def test_norwegian_invoice_extraction():
+def test_norwegian_invoice_extraction() -> None:
     """Test extraction of fields from a Norwegian invoice."""
     generator = MarkdownGenerator()
 
@@ -66,7 +66,7 @@ Timer            5 000,00    1 250,00    6 250,00
     assert "0112219" in markdown
 
 
-def test_norwegian_invoice_formatting():
+def test_norwegian_invoice_formatting() -> None:
     """Test the formatting of the markdown output."""
     generator = MarkdownGenerator()
 
@@ -85,7 +85,7 @@ Kontraktsum ekskl. mva 5 000,00
     assert "## Contract Amount" in markdown
 
 
-def test_norwegian_amount_formats():
+def test_norwegian_amount_formats() -> None:
     """Test handling of Norwegian amount formats."""
     generator = MarkdownGenerator()
 

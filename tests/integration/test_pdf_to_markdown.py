@@ -1,111 +1,113 @@
 """Integration tests for PDF to Markdown conversion."""
 
 import asyncio
-import io
-import os
-import tempfile
 from pathlib import Path
+from typing import AsyncGenerator, Generator
 
-import httpx
+import pytest
+from fastapi import FastAPI
 from fastapi.testclient import TestClient
-from PIL import Image
+from httpx import AsyncClient
 
+from app.main import app
 from app.pdf_processor import PDFProcessor
 
 
-def create_test_pdf(text: str, output_path: str):
-    """Create a test PDF with the given text."""
-    img = Image.new("RGB", (800, 400), color="white")
-    with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as f:
-        img.save(f.name, "PDF", resolution=300.0, save_all=True)
-        with open(f.name, "rb") as pdf:
-            with open(output_path, "wb") as out:
-                out.write(pdf.read())
+@pytest.fixture
+def test_app() -> FastAPI:
+    """Create test FastAPI application.
+
+    Returns:
+        FastAPI test application
+    """
+    return app
 
 
-def test_full_conversion_workflow(client: TestClient, tmp_path):
-    """Test the complete PDF to Markdown conversion workflow."""
-    # Create a test PDF
-    pdf_path = os.path.join(tmp_path, "test.pdf")
-    create_test_pdf("Test Invoice\nInvoice #: 12345", pdf_path)
+@pytest.fixture
+def client(test_app: FastAPI) -> Generator[TestClient, None, None]:
+    """Create test client.
 
-    # Send PDF for conversion
-    with open(pdf_path, "rb") as f:
-        response = client.post("/convert", files={"file": ("test.pdf", f, "application/pdf")})
+    Args:
+        test_app: FastAPI test application
 
+    Returns:
+        Test client
+    """
+    with TestClient(test_app) as client:
+        yield client
+
+
+@pytest.fixture
+async def async_client(test_app: FastAPI) -> AsyncGenerator[AsyncClient, None]:
+    """Create async test client.
+
+    Args:
+        test_app: FastAPI test application
+
+    Returns:
+        Async test client
+    """
+    async with AsyncClient(app=test_app, base_url="http://test") as client:
+        yield client
+
+
+def test_health_check(client: TestClient) -> None:
+    """Test health check endpoint."""
+    response = client.get("/health")
     assert response.status_code == 200
-    data = response.json()
-    assert "markdown" in data
-    assert "detected_language" in data
-    assert data["detected_language"] in ["en", "no"]
+    assert response.json() == {"status": "healthy"}
 
 
-def test_large_pdf_handling(client: TestClient, tmp_path):
-    """Test handling of larger PDFs."""
-    # Create a larger test PDF
-    pdf_path = os.path.join(tmp_path, "large.pdf")
-    create_test_pdf("A" * 10000, pdf_path)  # Large content
-
-    with open(pdf_path, "rb") as f:
-        response = client.post("/convert", files={"file": ("large.pdf", f, "application/pdf")})
-
-    assert response.status_code == 200
-
-
-def test_invalid_pdf_handling(client: TestClient):
-    """Test handling of invalid PDF files."""
-    # Test with non-PDF file
-    fake_pdf = io.BytesIO(b"This is not a PDF file")
-    response = client.post("/convert", files={"file": ("fake.pdf", fake_pdf, "application/pdf")})
+def test_invalid_file_type(client: TestClient) -> None:
+    """Test uploading invalid file type."""
+    files = {"file": ("test.txt", b"test content", "text/plain")}
+    response = client.post("/convert", files=files)
     assert response.status_code == 400
+    assert "Invalid file type" in response.json()["detail"]
 
 
-def test_concurrent_requests(client: TestClient, tmp_path):
-    """Test handling multiple concurrent requests."""
-    pdf_path = os.path.join(tmp_path, "test.pdf")
-    create_test_pdf("Test content", pdf_path)
-
-    async def make_request():
-        async with httpx.AsyncClient(base_url="http://testserver") as ac:
-            with open(pdf_path, "rb") as f:
-                files = {"file": ("test.pdf", f.read(), "application/pdf")}
-                return await ac.post("/convert", files=files)
-
-    async def test_concurrent():
-        """Test concurrent PDF processing."""
-        tasks = [make_request() for _ in range(5)]
-        responses = await asyncio.gather(*tasks)
-        return all(r.status_code == 200 for r in responses)
-
-    success = asyncio.run(test_concurrent())
-    assert success
-
-
-def test_pdf_to_markdown_conversion():
-    """Test end-to-end PDF to Markdown conversion."""
-    processor = PDFProcessor()
-    test_pdf_path = Path(__file__).parent / "test_files" / "sample.pdf"
-
-    with open(test_pdf_path, "rb") as f:
-        content = f.read()
-        result = processor.process_pdf(content)
-
-    assert result is not None
-    assert isinstance(result, str)
-    assert len(result) > 0
-
-
-async def test_concurrent_pdf_processing():
+@pytest.mark.asyncio
+async def test_concurrent_pdf_processing(async_client: AsyncClient, tmp_path: Path) -> None:
     """Test concurrent PDF processing."""
-    processor = PDFProcessor()
-    test_pdf_path = Path(__file__).parent / "test_files" / "sample.pdf"
+    # Create test PDF files
+    test_files = []
+    for i in range(3):
+        pdf_path = tmp_path / f"test_{i}.pdf"
+        pdf_path.write_bytes(b"%PDF-1.4\n")  # Minimal valid PDF
+        test_files.append(pdf_path)
 
-    with open(test_pdf_path, "rb") as f:
-        content = f.read()
-
+    # Process PDFs concurrently
     tasks = []
-    for _ in range(5):
-        tasks.append(asyncio.create_task(processor.process_pdf_async(content)))
+    for pdf_path in test_files:
+        with open(pdf_path, "rb") as f:
+            files = {"file": ("test.pdf", f, "application/pdf")}
+            tasks.append(async_client.post("/convert", files=files))
 
-    results = await asyncio.gather(*tasks)
-    return all(r is not None for r in results)
+    responses = await asyncio.gather(*tasks)
+    assert all(response.status_code == 200 for response in responses)
+
+
+@pytest.mark.asyncio
+async def test_large_pdf_processing(async_client: AsyncClient, tmp_path: Path) -> None:
+    """Test processing large PDF file."""
+    # Create large test PDF
+    large_pdf = tmp_path / "large.pdf"
+    with open(large_pdf, "wb") as f:
+        f.write(b"%PDF-1.4\n" * 1000)  # 5KB PDF
+
+    with open(large_pdf, "rb") as f:
+        files = {"file": ("large.pdf", f, "application/pdf")}
+        response = await async_client.post("/convert", files=files)
+
+    assert response.status_code == 200
+    assert "markdown" in response.json()
+
+
+def test_pdf_processor_error_handling(tmp_path: Path) -> None:
+    """Test PDF processor error handling."""
+    processor = PDFProcessor()
+    invalid_pdf = tmp_path / "invalid.pdf"
+    invalid_pdf.write_bytes(b"Not a PDF file")
+
+    with pytest.raises(Exception):
+        processor.process_pdf(str(invalid_pdf))

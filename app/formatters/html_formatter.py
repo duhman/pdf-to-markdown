@@ -1,14 +1,14 @@
 """HTML formatter implementation."""
 
-from typing import Any, Dict
+from typing import Any, Dict, List, Optional
 
-from ..formatters import BaseFormatter
+from app.formatters import BaseFormatter
 
 
 class HTMLFormatter(BaseFormatter):
     """Format data as HTML."""
 
-    def format_output(self, data: Dict[str, Any], tables: list = None) -> str:
+    def format_output(self, data: Dict[str, Any], tables: Optional[List[Any]] = None) -> str:
         """Format the data into HTML format."""
         html = [
             "<!DOCTYPE html>",

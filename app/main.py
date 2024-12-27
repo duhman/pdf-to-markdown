@@ -4,6 +4,7 @@ import uvicorn
 from fastapi import BackgroundTasks, FastAPI, File, UploadFile
 from fastapi.exceptions import HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from typing import Dict
 
 from app.markdown_generator import MarkdownGenerator
 from app.pdf_processor import PDFProcessor
@@ -27,7 +28,7 @@ background_tasks = BackgroundTasks()
 
 
 @app.post("/convert")
-async def convert_pdf(file: UploadFile = File(...)):
+async def convert_pdf(file: UploadFile = File(...)) -> Dict[str, str]:
     """Convert a PDF file to markdown."""
     try:
         # Read file content
@@ -52,7 +53,7 @@ async def convert_pdf(file: UploadFile = File(...)):
 
 
 @app.get("/health")
-async def health_check():
+async def health_check() -> Dict[str, str]:
     """Health check endpoint."""
     return {"status": "healthy"}
 

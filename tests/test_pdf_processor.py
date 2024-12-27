@@ -3,7 +3,7 @@
 from app.pdf_processor import PDFProcessor
 
 
-def test_pdf_processor_initialization():
+def test_pdf_processor_initialization() -> None:
     """Test PDF processor initialization."""
     processor = PDFProcessor()
     assert processor.languages is not None
@@ -13,7 +13,7 @@ def test_pdf_processor_initialization():
     assert processor.languages["no"] == "nor"
 
 
-def test_detect_language():
+def test_detect_language() -> None:
     """Test language detection."""
     processor = PDFProcessor()
 
@@ -29,7 +29,7 @@ def test_detect_language():
     assert processor.detect_language("") == "en"
 
 
-def test_detect_language_english():
+def test_detect_language_english() -> None:
     """Test language detection for English text."""
     processor = PDFProcessor()
     text = "This is an English invoice with some important details."
@@ -37,7 +37,7 @@ def test_detect_language_english():
     assert language == "en"
 
 
-def test_detect_language_norwegian():
+def test_detect_language_norwegian() -> None:
     """Test language detection for Norwegian text."""
     processor = PDFProcessor()
     text = "Dette er en norsk faktura med viktige detaljer."
@@ -45,7 +45,7 @@ def test_detect_language_norwegian():
     assert language == "no"
 
 
-def test_detect_language_fallback():
+def test_detect_language_fallback() -> None:
     """Test language detection fallback."""
     processor = PDFProcessor()
     text = "123 456 789"  # Numbers only

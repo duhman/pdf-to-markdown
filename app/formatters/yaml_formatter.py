@@ -1,18 +1,18 @@
 """YAML formatter implementation."""
 
-from typing import Any, Dict
+from typing import Any, Dict, List, Optional
 
 import yaml
 
-from ..formatters import BaseFormatter
+from app.formatters import BaseFormatter
 
 
 class YAMLFormatter(BaseFormatter):
     """Format data as YAML."""
 
-    def format_output(self, data: Dict[str, Any], tables: list = None) -> str:
+    def format_output(self, data: Dict[str, Any], tables: Optional[List[Any]] = None) -> str:
         """Format the data into YAML format."""
-        formatted_data = {
+        output_data: Dict[str, Any] = {
             "invoice_details": {
                 "company_registration": self.data_formatter.format_field(
                     "org_number", data.get("registration", "")
@@ -33,12 +33,12 @@ class YAMLFormatter(BaseFormatter):
         }
 
         if tables:
-            formatted_data["tables"] = []
+            output_data["tables"] = []
             for table in tables:
                 table_data = {
                     "headers": table.headers if table.headers else [],
                     "rows": [[cell.value for cell in row.cells] for row in table.rows],
                 }
-                formatted_data["tables"].append(table_data)
+                output_data["tables"].append(table_data)
 
-        return yaml.dump(formatted_data, allow_unicode=True, sort_keys=False)
+        return yaml.dump(output_data, allow_unicode=True, sort_keys=False)

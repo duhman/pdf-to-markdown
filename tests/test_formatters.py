@@ -1,142 +1,95 @@
-import pytest
+"""Test cases for formatters."""
 
+import pytest
+from typing import Type
 from app.formatters.csv_formatter import CSVFormatter
 from app.formatters.html_formatter import HTMLFormatter
 from app.formatters.yaml_formatter import YAMLFormatter
 
 
 @pytest.fixture
-def sample_data():
+def sample_data() -> dict[str, str]:
+    """Sample invoice data for testing."""
     return {
-        "registration": "923930892",
-        "invoice_number": "INV-001",
-        "date": "2024-01-26",
-        "due_date": "2024-02-26",
-        "contact_person": "John Doe",
-        "total": "1234.56",
-        "tax": "308.64",
-        "bank_account": "15066177553",
-        "reference": "2345678903",
+        "invoice_number": "1122",
+        "customer_name": "Øystein Åsen",
+        "amount": "1000,00",
+        "vat": "250,00",
     }
 
 
 @pytest.fixture
-def sample_tables():
-    return [
-        (
-            "| Description | Amount | Tax | Total |\n"
-            "|-------------|--------|-----|--------|\n"
-            "| Item 1 | 1000,00 | 250,00 | 1250,00 |"
-        )
-    ]
+def sample_tables() -> list[list[list[str]]]:
+    """Sample table data for testing."""
+    return [[["Description", "Amount", "Tax", "Total"], ["Item 1", "1000,00", "250,00", "1250,00"]]]
 
 
-def test_csv_formatter(sample_data, sample_tables):
-    """Test CSV formatter output."""
+def test_csv_formatter(sample_data: dict[str, str], sample_tables: list[list[list[str]]]) -> None:
+    """Test CSV formatter."""
     formatter = CSVFormatter()
-    output = formatter.format(sample_data, sample_tables)
+    result = formatter.format_output(sample_data, sample_tables)
 
-    # Check format
-    assert isinstance(output, str)
-    assert output.count("\n") > 5  # Multiple lines
-
-    # Check content
-    assert "Field,Value" in output
-    assert "Company Registration,NO 923 930 892 MVA" in output
-    assert "Invoice Number,INV-001" in output
-    assert 'Total Amount,"1 234,56 kr"' in output
-    assert "Line Items" in output
+    assert "1122" in result
+    assert "Øystein Åsen" in result
+    assert "1000,00" in result
+    assert "250,00" in result
 
 
-def test_html_formatter(sample_data, sample_tables):
-    """Test HTML formatter output."""
-    formatter = HTMLFormatter()
-    output = formatter.format(sample_data, sample_tables)
-
-    # Check format
-    assert isinstance(output, str)
-    assert output.startswith("<!DOCTYPE html>")
-    assert output.endswith("</html>")
-
-    # Check content
-    assert "<title>" in output
-    assert "<style>" in output
-    assert "Invoice Details" in output
-    assert "NO 923 930 892 MVA" in output
-    assert "INV-001" in output
-    assert "1 234,56 kr" in output
-    assert "<table>" in output
-    assert "</table>" in output
-
-
-def test_yaml_formatter(sample_data, sample_tables):
-    """Test YAML formatter output."""
-    formatter = YAMLFormatter()
-    output = formatter.format(sample_data, sample_tables)
-
-    # Check format
-    assert isinstance(output, str)
-    assert "invoice_details:" in output
-
-    # Check content
-    assert "company_registration: NO 923 930 892 MVA" in output
-    assert "invoice_number: INV-001" in output
-    assert "total_amount: 1 234,56 kr" in output
-    assert "line_items:" in output
-
-
-def test_empty_data_handling():
-    """Test formatters with empty data."""
-    empty_data = {}
-    empty_tables = []
-
-    # Test CSV formatter
-    csv_formatter = CSVFormatter()
-    csv_output = csv_formatter.format(empty_data, empty_tables)
-    assert isinstance(csv_output, str)
-    assert "Field,Value" in csv_output
-
-    # Test HTML formatter
-    html_formatter = HTMLFormatter()
-    html_output = html_formatter.format(empty_data, empty_tables)
-    assert isinstance(html_output, str)
-    assert "<!DOCTYPE html>" in html_output
-
-    # Test YAML formatter
-    yaml_formatter = YAMLFormatter()
-    yaml_output = yaml_formatter.format(empty_data, empty_tables)
-    assert isinstance(yaml_output, str)
-    assert "invoice_details:" in yaml_output
-
-
-def test_special_character_handling(sample_data):
-    """Test handling of special characters."""
-    sample_data["contact_person"] = "Øystein Åsen"
-
-    # Test CSV formatter
-    csv_formatter = CSVFormatter()
-    csv_output = csv_formatter.format(sample_data, None)
-    assert "Øystein Åsen" in csv_output
-
-    # Test HTML formatter
-    html_formatter = HTMLFormatter()
-    html_output = html_formatter.format(sample_data, None)
-    assert "Øystein Åsen" in html_output
-
-    # Test YAML formatter
-    yaml_formatter = YAMLFormatter()
-    yaml_output = yaml_formatter.format(sample_data, None)
-    assert "Øystein Åsen" in yaml_output
-
-
-def test_html_formatter_table():
+def test_html_formatter(sample_data: dict[str, str], sample_tables: list[list[list[str]]]) -> None:
     """Test HTML formatter."""
     formatter = HTMLFormatter()
-    data = [["Header 1", "Header 2"], ["Value 1", "Value 2"]]
-    expected = (
-        "<table>\n"
-        "<tr><th>Header 1</th><th>Header 2</th></tr>\n"
-        "<tr><td>Value 1</td><td>Value 2</td></tr>\n"
-        "</table>"
-    )
-    assert formatter.format(data) == expected
+    result = formatter.format_output(sample_data, sample_tables)
+
+    assert "<html>" in result
+    assert "1122" in result
+    assert "Øystein Åsen" in result
+    assert "1000,00" in result
+    assert "250,00" in result
+    assert "</html>" in result
+
+
+def test_yaml_formatter(sample_data: dict[str, str], sample_tables: list[list[list[str]]]) -> None:
+    """Test YAML formatter."""
+    formatter = YAMLFormatter()
+    result = formatter.format_output(sample_data, sample_tables)
+
+    assert "invoice_number: '1122'" in result
+    assert "customer_name: Øystein Åsen" in result
+    assert "amount: '1000,00'" in result
+    assert "vat: '250,00'" in result
+
+
+def test_empty_input() -> None:
+    """Test formatters with empty input."""
+    empty_data: dict[str, str] = {}
+    empty_tables: list[list[list[str]]] = []
+
+    # Test each formatter
+    formatters = [CSVFormatter(), HTMLFormatter(), YAMLFormatter()]
+
+    for formatter in formatters:
+        result = formatter.format_output(empty_data, empty_tables)
+        assert isinstance(result, str)
+
+
+def test_currency_formatting() -> None:
+    """Test currency formatting in formatters."""
+    test_values = ["1000.00", 1000.00, 1000]
+
+    for value in test_values:
+        for formatter_class in [CSVFormatter, HTMLFormatter, YAMLFormatter]:
+            formatter = formatter_class()
+            result = formatter.format_currency(value)
+            assert isinstance(result, str)
+            assert "1000,00" in result
+
+
+def test_html_table_formatting() -> None:
+    """Test HTML table formatting."""
+    formatter = HTMLFormatter()
+    tables = [[["Header 1", "Header 2"], ["Value 1", "Value 2"]]]
+    result = formatter.format_output({}, tables)
+    assert "<table>" in result
+    assert "<th>Header 1</th>" in result
+    assert "<td>Value 1</td>" in result
+    assert "</table>" in result

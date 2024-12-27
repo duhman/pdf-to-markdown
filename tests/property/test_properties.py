@@ -2,6 +2,7 @@
 
 from hypothesis import given
 from hypothesis import strategies as st
+from typing import List, Dict
 
 from app.markdown_generator import MarkdownGenerator
 from app.pdf_processor import PDFProcessor
@@ -18,7 +19,9 @@ dates = st.dates().map(lambda d: d.strftime("%Y-%m-%d"))
     date=dates,
     language=st.sampled_from(["en", "no"]),
 )
-def test_markdown_generator_properties(invoice_number, amount, date, language):
+def test_markdown_generator_properties(
+    invoice_number: str, amount: float, date: str, language: str
+) -> None:
     """Test MarkdownGenerator with property-based testing."""
     generator = MarkdownGenerator()
 
@@ -47,7 +50,7 @@ def test_markdown_generator_properties(invoice_number, amount, date, language):
 
 
 @given(st.text(min_size=1))
-def test_language_detection_properties(text):
+def test_language_detection_properties(text: str) -> None:
     """Test language detection with property-based testing."""
     processor = PDFProcessor()
     language = processor.detect_language(text)
@@ -58,7 +61,7 @@ def test_language_detection_properties(text):
 
 
 @given(st.lists(st.text(min_size=1), min_size=1, max_size=10))
-def test_batch_processing_properties(texts):
+def test_batch_processing_properties(texts: List[str]) -> None:
     """Test batch processing with property-based testing."""
     processor = PDFProcessor()
     generator = MarkdownGenerator()
@@ -79,7 +82,7 @@ def test_batch_processing_properties(texts):
     amount=amounts,
     vat_rate=st.decimals(min_value=0, max_value=0.25, places=2),
 )
-def test_vat_calculation_properties(invoice_number, amount, vat_rate):
+def test_vat_calculation_properties(invoice_number: str, amount: float, vat_rate: float) -> None:
     """Test VAT calculations with property-based testing."""
     generator = MarkdownGenerator()
 
@@ -99,7 +102,7 @@ def test_vat_calculation_properties(invoice_number, amount, vat_rate):
 
 
 @given(st.text())
-def test_markdown_generation_property(text):
+def test_markdown_generation_property(text: str) -> None:
     """Test that markdown generation works for any input text."""
     generator = MarkdownGenerator()
     result = generator.generate_markdown(text, "en")

@@ -2,15 +2,15 @@
 
 import csv
 from io import StringIO
-from typing import Any, Dict
+from typing import Any, Dict, List, Optional
 
-from ..formatters import BaseFormatter
+from app.formatters import BaseFormatter
 
 
 class CSVFormatter(BaseFormatter):
     """Format data as CSV."""
 
-    def format_output(self, data: Dict[str, Any], tables: list = None) -> str:
+    def format_output(self, data: Dict[str, Any], tables: Optional[List[Any]] = None) -> str:
         """Format the data into CSV format."""
         output = StringIO()
         writer = csv.writer(output, delimiter=",", quotechar='"', quoting=csv.QUOTE_MINIMAL)

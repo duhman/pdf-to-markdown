@@ -1,221 +1,164 @@
+"""Validation functions for invoice data."""
+
 import re
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
+from typing import Optional
 
 
-class NorwegianValidator:
-    def __init__(self):
-        self.postal_codes = self._load_postal_codes()
+def validate_norwegian_org_number(org_number: str) -> bool:
+    """Validate Norwegian organization number.
 
-    def _load_postal_codes(self) -> set:
-        # In a real implementation, load from a file or database
-        return {"0180", "1407", "0247"}  # Example postal codes
+    Args:
+        org_number: The organization number to validate
 
-    @staticmethod
-    def validate_org_number(org_number: str) -> bool:
-        """Validate Norwegian organization number (9 digits)."""
-        # Remove 'NO' prefix and spaces
-        cleaned = re.sub(r"[^0-9]", "", org_number)
-        if len(cleaned) != 9:
+    Returns:
+        True if valid, False otherwise
+    """
+    if not org_number.isdigit() or len(org_number) != 9:
+        return False
+
+    weights = [3, 2, 7, 6, 5, 4, 3, 2]
+    digits = [int(d) for d in org_number[:-1]]
+
+    total = sum(w * d for w, d in zip(weights, digits))
+    check_digit = (11 - (total % 11)) % 11
+    if check_digit == 10:
+        return False
+
+    return check_digit == int(org_number[-1])
+
+
+def validate_norwegian_account_number(account_number: str) -> bool:
+    """Validate Norwegian bank account number.
+
+    Args:
+        account_number: The account number to validate
+
+    Returns:
+        True if valid, False otherwise
+    """
+    if not account_number.isdigit() or len(account_number) != 11:
+        return False
+
+    weights = [5, 4, 3, 2, 7, 6, 5, 4, 3, 2]
+    digits = [int(d) for d in account_number[:-1]]
+
+    total = sum(w * d for w, d in zip(weights, digits))
+    check_digit = (11 - (total % 11)) % 11
+    if check_digit == 10:
+        return False
+
+    return check_digit == int(account_number[-1])
+
+
+def validate_amount(amount: str) -> Optional[Decimal]:
+    """Validate and parse amount string.
+
+    Args:
+        amount: The amount string to validate
+
+    Returns:
+        Decimal amount if valid, None otherwise
+    """
+    # Remove whitespace and currency symbols
+    amount = amount.strip().replace(" ", "").replace("kr", "").replace("NOK", "")
+
+    # Replace comma with dot for decimal point
+    amount = amount.replace(",", ".")
+
+    try:
+        decimal_amount = Decimal(amount)
+        if decimal_amount < 0:
+            return None
+        return decimal_amount
+    except (ValueError, InvalidOperation):
+        return None
+
+
+def validate_vat_number(vat_number: str) -> bool:
+    """Validate Norwegian VAT number.
+
+    Args:
+        vat_number: The VAT number to validate
+
+    Returns:
+        True if valid, False otherwise
+    """
+    # Remove 'MVA' suffix if present
+    vat_number = vat_number.upper().replace("MVA", "").strip()
+
+    # Should be 9 digits
+    if not vat_number.isdigit() or len(vat_number) != 9:
+        return False
+
+    return validate_norwegian_org_number(vat_number)
+
+
+def validate_norwegian_phone(phone: str) -> bool:
+    """Validate Norwegian phone number.
+
+    Args:
+        phone: The phone number to validate
+
+    Returns:
+        True if valid, False otherwise
+    """
+    # Remove spaces and special characters
+    phone = re.sub(r"[\s\-\+\(\)]", "", phone)
+
+    # Check if starts with country code
+    if phone.startswith("47"):
+        phone = phone[2:]
+    elif phone.startswith("00"):
+        phone = phone[4:]  # Remove '0047'
+    elif phone.startswith("+"):
+        phone = phone[3:]  # Remove '+47'
+
+    # Should be 8 digits
+    return phone.isdigit() and len(phone) == 8
+
+
+def validate_norwegian_postal_code(postal_code: str) -> bool:
+    """Validate Norwegian postal code.
+
+    Args:
+        postal_code: The postal code to validate
+
+    Returns:
+        True if valid, False otherwise
+    """
+    return postal_code.isdigit() and len(postal_code) == 4
+
+
+def validate_norwegian_date(date_str: str) -> bool:
+    """Validate Norwegian date format (DD.MM.YYYY).
+
+    Args:
+        date_str: The date string to validate
+
+    Returns:
+        True if valid, False otherwise
+    """
+    pattern = r"^\d{2}\.\d{2}\.\d{4}$"
+    if not re.match(pattern, date_str):
+        return False
+
+    try:
+        day, month, year = map(int, date_str.split("."))
+        if not (1 <= month <= 12 and 1 <= day <= 31):
             return False
-
-        # Validate using weights and modulus 11
-        weights = [3, 2, 7, 6, 5, 4, 3, 2]
-        digits = [int(d) for d in cleaned[:-1]]
-        control = int(cleaned[-1])
-
-        sum_product = sum(w * d for w, d in zip(weights, digits))
-        remainder = sum_product % 11
-        calculated_control = 11 - remainder if remainder != 0 else 0
-
-        return calculated_control == control
-
-    @staticmethod
-    def format_org_number(org_number: str) -> str:
-        """Format Norwegian organization number."""
-        cleaned = re.sub(r"[^0-9]", "", org_number)
-        if len(cleaned) == 9:
-            return f"NO {cleaned[:3]} {cleaned[3:6]} {cleaned[6:]} MVA"
-        return org_number
-
-    @staticmethod
-    def _mod11_checksum(number: str, weights: list) -> int:
-        """Calculate MOD11 checksum for a number using given weights."""
-        if len(weights) < len(number):
-            weights = weights[-len(number) :]
-        total = sum(int(d) * w for d, w in zip(number, weights))
-        remainder = total % 11
-        if remainder == 0:
-            return 0
-        elif remainder == 1:
-            return -1  # Invalid
-        return 11 - remainder
-
-    def validate_personal_number(self, number: str) -> bool:
-        """Validate Norwegian personal number (fødselsnummer)."""
-        if not number or not number.isdigit() or len(number) != 11:
+        if month in [4, 6, 9, 11] and day > 30:
             return False
-
-        # Extract components
-        day = int(number[0:2])
-        month = int(number[2:4])
-        year = int(number[4:6])
-        individual = int(number[6:9])
-
-        print(f"\nValidating personal number {number}")
-        print(f"Date components: {day}/{month}/{year}")
-        print(f"Individual number: {individual}")
-
-        # Validate date components
-        if day < 1 or day > 31 or month < 1 or month > 12:
-            print("Invalid date components")
-            return False
-
-        # Adjust individual number ranges for birth century
-        if individual < 500:  # Born 1900-1999
-            year += 1900
-        elif individual < 750:  # Born 2000-2039
-            year += 2000
-        elif individual < 1000:  # Born 1854-1899
-            year += 1800
-
-        print(f"Full year: {year}")
-
-        # Validate control digits using MOD11
-        # The weights for Norwegian personal numbers
-        weights1 = [3, 7, 6, 1, 8, 9, 4, 5, 2]  # For first control digit
-        weights2 = [5, 4, 3, 2, 7, 6, 5, 4, 3, 2]  # For second control digit
-
-        # First control digit
-        print("\nChecking first control digit:")
-        checksum1 = self._mod11_checksum(number[:9], weights1)
-        if checksum1 == -1 or checksum1 != int(number[9]):
-            print(f"First control digit validation failed. Expected {number[9]}, got {checksum1}")
-            return False
-
-        # Second control digit
-        print("\nChecking second control digit:")
-        checksum2 = self._mod11_checksum(number[:10], weights2)
-        if checksum2 == -1 or checksum2 != int(number[10]):
-            print(f"Second control digit validation failed. Expected {number[10]}, got {checksum2}")
-            return False
-
-        print("Personal number validation successful")
-        return True
-
-    def validate_address(self, postal_code: str, city: str) -> bool:
-        """Validate Norwegian postal address."""
-        if not postal_code.isdigit() or len(postal_code) != 4:
-            return False
-        return postal_code in self.postal_codes
-
-    def validate_account_number(self, account: str) -> bool:
-        """Validate Norwegian bank account number."""
-        # Remove dots if present
-        account = account.replace(".", "")
-
-        if not account or not account.isdigit() or len(account) != 11:
-            return False
-
-        try:
-            # Calculate MOD11 checksum
-            weights = [5, 4, 3, 2, 7, 6, 5, 4, 3, 2]
-            checksum = self._mod11_checksum(account[:-1], weights)
-            return checksum == int(account[-1])
-        except ValueError:  # Be specific about the exception
-            return False
-
-    @staticmethod
-    def validate_vat_number(vat: str) -> bool:
-        """Validate Norwegian VAT number."""
-        # VAT number is org number + 'MVA'
-        cleaned = vat.upper().replace("NO", "").replace("MVA", "").strip()
-        return NorwegianValidator.validate_org_number(cleaned)
-
-    @staticmethod
-    def format_currency(value: str) -> str:
-        """Format Norwegian currency (NOK)."""
-        try:
-            # Convert to decimal for proper handling of numbers
-            amount = Decimal(value.replace(" ", "").replace(",", "."))
-            # Format with thousands separator and two decimal places
-            formatted = "{:,.2f}".format(amount)
-            # Replace decimal point with comma and use space as thousands separator
-            formatted = formatted.replace(",", " ").replace(".", ",")
-            return f"NOK {formatted}"
-        except (ValueError, Decimal.InvalidOperation):  # Be specific about exceptions
-            return value
-
-    @staticmethod
-    def format_phone(phone: str) -> str:
-        """Format Norwegian phone number."""
-        try:
-            # Remove all non-digit characters
-            digits = "".join(filter(str.isdigit, phone))
-
-            # Check if it's a valid Norwegian phone number
-            if len(digits) == 8:
-                return f"{digits[:2]} {digits[2:4]} {digits[4:6]} {digits[6:]}"
-            elif len(digits) == 11 and digits.startswith("47"):
-                return f"+{digits[:2]} {digits[2:4]} {digits[4:6]} {digits[6:8]} {digits[8:]}"
-            return phone
-        except ValueError:  # Be specific about the exception
-            return phone
-
-    def format_address(self, street: str, postal_code: str, city: str) -> str:
-        """Format Norwegian address."""
-        if self.validate_address(postal_code, city):
-            return f"{street}\n{postal_code} {city}"
-        return f"{street}\n{postal_code} {city} (Invalid postal code)"
-
-    def format_account_number(self, account: str) -> str:
-        """Format Norwegian bank account number."""
-        cleaned = "".join(c for c in account if c.isdigit())
-        if len(cleaned) == 11:
-            return f"{cleaned[:4]}.{cleaned[4:6]}.{cleaned[6:]}"
-        return account
-
-
-class DataFormatter:
-    def __init__(self):
-        self.norwegian = NorwegianValidator()
-
-    def format_field(self, field_type: str, value: str, language: str = "no") -> str:
-        """Format a field based on its type and language."""
-        if not value:
-            return value
-
-        if language == "no":
-            if field_type == "org_number":
-                return self.norwegian.format_org_number(value)
-            elif field_type == "currency":
-                return self.norwegian.format_currency(value)
-            elif field_type == "phone":
-                return self.norwegian.format_phone(value)
-            elif field_type == "address":
-                parts = value.split("\n")
-                if len(parts) == 3:
-                    return self.norwegian.format_address(parts[0], parts[1], parts[2])
-                return value
-            elif field_type == "account_number":
-                return self.norwegian.format_account_number(value)
-
-        return value
-
-    def validate_field(self, field_type: str, value: str, language: str = "no") -> bool:
-        """Validate a field based on its type and language."""
-        if language == "no":
-            if field_type == "org_number":
-                return self.norwegian.validate_org_number(value)
-            elif field_type == "address":
-                parts = value.split("\n")
-                if len(parts) == 3:
-                    return self.norwegian.validate_address(parts[1], parts[2])
+        if month == 2:
+            leap_year = year % 4 == 0 and (year % 100 != 0 or year % 400 == 0)
+            if day > 29 or (not leap_year and day > 28):
                 return False
-            elif field_type == "account_number":
-                return self.norwegian.validate_account_number(value)
-            elif field_type == "personal_number":
-                return self.norwegian.validate_personal_number(value)
-            elif field_type == "vat_number":
-                return self.norwegian.validate_vat_number(value)
-
         return True
+    except ValueError:
+        return False
+
+
+def setup_validators() -> None:
+    """Initialize any required validator settings."""
+    # Currently no initialization needed
+    pass
