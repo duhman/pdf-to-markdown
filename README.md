@@ -114,7 +114,7 @@ mypy app tests
 
 # Security checks
 bandit -r app
-safety check
+safety scan
 ```
 
 ## Known Issues

@@ -32,12 +32,12 @@ class NorwegianValidator:
 
         weights = [5, 4, 3, 2, 7, 6, 5, 4, 3, 2]
         digits = [int(d) for d in number]
-        
+
         sum_product = sum(w * d for w, d in zip(weights, digits[:-1]))
         control_digit = (11 - (sum_product % 11)) % 11
         if control_digit == 10:
             return False
-            
+
         return control_digit == digits[-1]
 
     def validate_personal_number(self, number: str) -> bool:
@@ -48,7 +48,7 @@ class NorwegianValidator:
         day = int(number[0:2])
         month = int(number[2:4])
         year = int(number[4:6])
-        
+
         # Basic date validation
         if month < 1 or month > 12 or day < 1 or day > 31:
             return False
@@ -62,18 +62,18 @@ class NorwegianValidator:
         # Validate control digits
         weights1 = [3, 7, 6, 1, 8, 9, 4, 5, 2]
         weights2 = [5, 4, 3, 2, 7, 6, 5, 4, 3, 2]
-        
+
         digits = [int(d) for d in number]
         sum1 = sum(w * d for w, d in zip(weights1, digits[:-2]))
         control1 = (11 - (sum1 % 11)) % 11
         if control1 == 10 or control1 != digits[-2]:
             return False
-            
+
         sum2 = sum(w * d for w, d in zip(weights2, digits[:-1]))
         control2 = (11 - (sum2 % 11)) % 11
         if control2 == 10 or control2 != digits[-1]:
             return False
-            
+
         return True
 
     def validate_vat_number(self, number: str) -> bool:

@@ -1,11 +1,13 @@
 """Test cases for formatters."""
 
-import pytest
 from typing import Union
+
+import pytest
+
+from app.formatters.base_formatter import BaseFormatter
 from app.formatters.csv_formatter import CSVFormatter
 from app.formatters.html_formatter import HTMLFormatter
 from app.formatters.yaml_formatter import YAMLFormatter
-from app.formatters.base_formatter import BaseFormatter
 
 
 @pytest.fixture
@@ -75,6 +77,7 @@ def test_empty_input() -> None:
 
 def test_base_formatter() -> None:
     """Test base formatter functionality."""
+
     class TestFormatter(BaseFormatter):
         def format_output(self, data: dict[str, str], tables: list[list[list[str]]]) -> str:
             return "test"
@@ -89,7 +92,7 @@ def test_currency_formatting() -> None:
     """Test currency formatting in formatters."""
     formatters = [HTMLFormatter(), CSVFormatter(), YAMLFormatter()]
     test_values: list[Union[str, float, int]] = [1000.00, 1000, "1000.00"]
-    
+
     for formatter in formatters:
         for value in test_values:
             result = formatter.format_currency(value)

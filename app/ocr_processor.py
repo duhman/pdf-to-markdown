@@ -1,7 +1,7 @@
 """OCR processor for extracting text from PDFs."""
 
 import re
-from typing import Dict, List, Tuple, Any, Union, cast
+from typing import Any, Dict, List, Tuple, Union, cast
 
 import cv2  # type: ignore
 import numpy as np  # type: ignore
@@ -186,23 +186,31 @@ class OCRProcessor:
 
         return enhanced.strip()
 
-    def detect_layout(self, layout_info: List[Dict[str, Union[int, str]]]) -> Dict[str, List[Dict[str, Union[int, str]]]]:
+    def detect_layout(
+        self, layout_info: List[Dict[str, Union[int, str]]]
+    ) -> Dict[str, List[Dict[str, Union[int, str]]]]:
         """Detect document layout sections."""
-        sections: Dict[str, List[Dict[str, Union[int, str]]]] = {"header": [], "body": [], "footer": []}
+        sections: Dict[str, List[Dict[str, Union[int, str]]]] = {
+            "header": [],
+            "body": [],
+            "footer": [],
+        }
 
         if not layout_info:
             return sections
 
         # Sort by vertical position
         sorted_elements = sorted(layout_info, key=lambda x: cast(int, x["top"]))
-        
+
         # Get page height
-        max_y = max(cast(int, elem["top"]) + cast(int, elem.get("height", 0)) for elem in layout_info)
-        
+        max_y = max(
+            cast(int, elem["top"]) + cast(int, elem.get("height", 0)) for elem in layout_info
+        )
+
         # Define section boundaries
         header_height = float(max_y) * 0.2  # Top 20%
-        footer_start = float(max_y) * 0.8   # Bottom 20%
-        
+        footer_start = float(max_y) * 0.8  # Bottom 20%
+
         # Categorize elements
         for elem in sorted_elements:
             y = cast(int, elem["top"])
@@ -212,20 +220,20 @@ class OCRProcessor:
                 sections["footer"].append(elem)
             else:
                 sections["body"].append(elem)
-        
+
         return sections
 
     def detect_text_orientation(self, image: np.ndarray) -> float:
         """Detect the orientation of text in the image."""
         # Convert to grayscale
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-        
+
         # Apply edge detection
         edges = cv2.Canny(gray, 50, 150, apertureSize=3)
-        
+
         # Apply Hough transform
-        lines = cv2.HoughLines(edges, 1, np.pi/180, 100)
-        
+        lines = cv2.HoughLines(edges, 1, np.pi / 180, 100)
+
         if lines is not None:
             angles: list[float] = []
             for rho, theta in lines[:, 0]:
@@ -234,19 +242,19 @@ class OCRProcessor:
                 if angle > 90:
                     angle = angle - 180
                 angles.append(angle)
-            
+
             # Return median angle
             if angles:
                 median_angle = float(np.median(angles))
                 return median_angle
-        
+
         return 0.0
 
     def process_image(self, image: np.ndarray, method: str = "default") -> str:
         """Process an image and extract text using the specified preprocessing method."""
         if method not in self.preprocessing_methods:
             raise ValueError(f"Unknown preprocessing method: {method}")
-            
+
         processed = self.preprocessing_methods[method](image)
         text = pytesseract.image_to_string(processed)
         return str(text)
@@ -255,13 +263,13 @@ class OCRProcessor:
         """Detect regions containing text in the image."""
         # Convert to grayscale
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-        
+
         # Apply thresholding
         _, binary = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-        
+
         # Find contours
         contours, _ = cv2.findContours(binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        
+
         # Get bounding rectangles for text regions
         regions = []
         for contour in contours:
@@ -269,7 +277,7 @@ class OCRProcessor:
             # Filter out very small regions
             if w > 20 and h > 20:
                 regions.append((x, y, w, h))
-                
+
         return regions
 
     def enhance_contrast(self, image: np.ndarray) -> np.ndarray:
@@ -277,14 +285,14 @@ class OCRProcessor:
         # Convert to LAB color space
         lab = cv2.cvtColor(image, cv2.COLOR_BGR2LAB)
         l, a, b = cv2.split(lab)
-        
+
         # Apply CLAHE to L channel
         clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8, 8))
         cl = clahe.apply(l)
-        
+
         # Merge channels
         limg = cv2.merge((cl, a, b))
-        
+
         # Convert back to BGR
         return cv2.cvtColor(limg, cv2.COLOR_LAB2BGR)
 
@@ -292,25 +300,25 @@ class OCRProcessor:
         """Remove noise from the image."""
         # Convert to grayscale
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-        
+
         # Apply median blur
         denoised = cv2.medianBlur(gray, 3)
-        
+
         # Apply bilateral filter
         return cv2.bilateralFilter(denoised, 9, 75, 75)
 
     def deskew_image(self, image: np.ndarray) -> np.ndarray:
         """Deskew the image based on detected text orientation."""
         angle = self.detect_text_orientation(image)
-        
+
         # Get image dimensions
         height, width = image.shape[:2]
         center = (width // 2, height // 2)
-        
+
         # Create rotation matrix
         matrix = cv2.getRotationMatrix2D(center, angle, 1.0)
-        
+
         # Perform rotation
-        return cv2.warpAffine(image, matrix, (width, height), 
-                            flags=cv2.INTER_CUBIC, 
-                            borderMode=cv2.BORDER_REPLICATE)
+        return cv2.warpAffine(
+            image, matrix, (width, height), flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_REPLICATE
+        )

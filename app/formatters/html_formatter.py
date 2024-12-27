@@ -43,10 +43,18 @@ class HTMLFormatter(BaseFormatter):
         html.append("<h2>Basic Information</h2>")
         html.append("<table>")
         html.append("<tr><th>Field</th><th>Value</th></tr>")
-        html.append(f"<tr><td>Invoice Number</td><td>{self.format_field(data.get('invoice_number', ''))}</td></tr>")
-        html.append(f"<tr><td>Issue Date</td><td>{self.format_field(data.get('issue_date', ''))}</td></tr>")
-        html.append(f"<tr><td>Due Date</td><td>{self.format_field(data.get('due_date', ''))}</td></tr>")
-        html.append(f"<tr><td>Contact Person</td><td>{self.format_field(data.get('contact_person', ''))}</td></tr>")
+        html.append(
+            f"<tr><td>Invoice Number</td><td>{self.format_field(data.get('invoice_number', ''))}</td></tr>"
+        )
+        html.append(
+            f"<tr><td>Issue Date</td><td>{self.format_field(data.get('issue_date', ''))}</td></tr>"
+        )
+        html.append(
+            f"<tr><td>Due Date</td><td>{self.format_field(data.get('due_date', ''))}</td></tr>"
+        )
+        html.append(
+            f"<tr><td>Contact Person</td><td>{self.format_field(data.get('contact_person', ''))}</td></tr>"
+        )
         html.append("</table>")
 
         # Financial Information
@@ -66,7 +74,9 @@ class HTMLFormatter(BaseFormatter):
         html.append("<table>")
         html.append("<tr><th>Field</th><th>Value</th></tr>")
         if data.get("bank_account"):
-            html.append(f"<tr><td>Bank Account</td><td>{self.format_field(data['bank_account'])}</td></tr>")
+            html.append(
+                f"<tr><td>Bank Account</td><td>{self.format_field(data['bank_account'])}</td></tr>"
+            )
         if data.get("reference"):
             ref = self.format_field(data["reference"])
             html.append(f"<tr><td>Reference</td><td>{ref}</td></tr>")

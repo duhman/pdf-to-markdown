@@ -211,7 +211,7 @@ def test_detect_layout(processor: OCRProcessor) -> None:
     layout_info = [
         {"y": 10, "height": 50, "text": "Header", "width": 100},
         {"y": 100, "height": 200, "text": "Body", "width": 100},
-        {"y": 350, "height": 50, "text": "Footer", "width": 100}
+        {"y": 350, "height": 50, "text": "Footer", "width": 100},
     ]
     sections = processor.detect_layout(layout_info)
     assert "header" in sections
@@ -242,7 +242,7 @@ def test_layout_detection(processor: OCRProcessor) -> None:
     layout_info = [
         {"y": 10, "height": 50, "text": "Header", "width": 100},
         {"y": 100, "height": 200, "text": "Body", "width": 100},
-        {"y": 350, "height": 50, "text": "Footer", "width": 100}
+        {"y": 350, "height": 50, "text": "Footer", "width": 100},
     ]
     # Cast the layout info to the correct type
     typed_layout_info = [
