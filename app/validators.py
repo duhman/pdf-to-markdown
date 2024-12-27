@@ -42,7 +42,7 @@ class NorwegianValidator:
     def _mod11_checksum(number: str, weights: list) -> int:
         """Calculate MOD11 checksum for a number using given weights."""
         if len(weights) < len(number):
-            weights = weights[-len(number):]
+            weights = weights[-len(number) :]
         total = sum(int(d) * w for d, w in zip(number, weights))
         remainder = total % 11
         if remainder == 0:

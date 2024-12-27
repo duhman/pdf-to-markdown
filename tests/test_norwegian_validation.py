@@ -26,7 +26,9 @@ def test_account_number_validation(validator):
 
 def test_personal_number_validation(validator):
     """Test personal number (fødselsnummer) validation."""
-    assert validator.validate_personal_number("29029600013")  # Valid (29th Feb 1996, Individual number 001, Control digits 1,3)
+    assert validator.validate_personal_number(
+        "29029600013"
+    )  # Valid (29th Feb 1996, Individual number 001, Control digits 1,3)
     assert not validator.validate_personal_number("29029600012")  # Invalid checksum
     assert not validator.validate_personal_number("32029600013")  # Invalid date
     assert not validator.validate_personal_number("2902960001")  # Too short
