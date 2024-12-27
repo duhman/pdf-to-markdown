@@ -1,8 +1,10 @@
-from abc import ABC, abstractmethod
-from decimal import Decimal
-from typing import Dict, Any
+"""Base formatter and formatter implementations."""
 import json
 import xml.etree.ElementTree as ET
+from abc import ABC, abstractmethod
+from decimal import Decimal
+from typing import Any, Dict
+
 from .validators import DataFormatter
 
 

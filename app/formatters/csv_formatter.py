@@ -1,6 +1,7 @@
+"""CSV formatter implementation."""
 import csv
 from io import StringIO
-from typing import Dict, Any
+from typing import Any, Dict
 
 from ..formatters import BaseFormatter
 

@@ -1,4 +1,6 @@
-from typing import Dict, Any
+"""YAML formatter implementation."""
+from typing import Any, Dict
+
 import yaml
 
 from ..formatters import BaseFormatter

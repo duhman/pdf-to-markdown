@@ -1,4 +1,6 @@
-from typing import Dict, Any
+"""HTML formatter implementation."""
+from typing import Any, Dict
+
 from ..formatters import BaseFormatter
 
 
