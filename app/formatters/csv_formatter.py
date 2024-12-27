@@ -10,8 +10,14 @@ from app.formatters import BaseFormatter
 class CSVFormatter(BaseFormatter):
     """Format data as CSV."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
+
+    def format_field(self, value: str | float | int) -> str:
+        """Format a field value."""
+        if isinstance(value, (float, int)):
+            return self.format_currency(value)
+        return str(value)
 
     def format_output(self, data: Dict[str, Any], tables: Optional[List[Any]] = None) -> str:
         """Format the data into CSV format."""
@@ -27,29 +33,27 @@ class CSVFormatter(BaseFormatter):
             writer.writerow(
                 [
                     "Company Registration",
-                    self.data_formatter.format_field("org_number", data["registration"]),
+                    self.format_field(data["registration"]),
                 ]
             )
 
         # Write basic invoice information
-        writer.writerow(["Invoice Number", data.get("invoice_number", "")])
-        writer.writerow(["Issue Date", data.get("issue_date", "")])
-        writer.writerow(["Due Date", data.get("due_date", "")])
-        writer.writerow(["Contact Person", data.get("contact_person", "")])
+        writer.writerow(["Invoice Number", self.format_field(data.get("invoice_number", ""))])
+        writer.writerow(["Issue Date", self.format_field(data.get("issue_date", ""))])
+        writer.writerow(["Due Date", self.format_field(data.get("due_date", ""))])
+        writer.writerow(["Contact Person", self.format_field(data.get("contact_person", ""))])
 
         # Write financial information
         if data.get("total"):
-            writer.writerow(["Total Amount", self.format_currency(data["total"])])
+            writer.writerow(["Total Amount", self.format_field(data["total"])])
         if data.get("tax"):
-            writer.writerow(["Tax", self.format_currency(data["tax"])])
+            writer.writerow(["Tax", self.format_field(data["tax"])])
 
         # Write payment information
         if data.get("bank_account"):
-            writer.writerow(["Bank Account", data["bank_account"]])
+            writer.writerow(["Bank Account", self.format_field(data["bank_account"])])
         if data.get("reference"):
-            writer.writerow(
-                ["Reference", self.data_formatter.format_field("kid", data["reference"])]
-            )
+            writer.writerow(["Reference", self.format_field(data["reference"])])
 
         # Add tables if present
         if tables:
@@ -60,6 +64,6 @@ class CSVFormatter(BaseFormatter):
                 if table.headers:
                     writer.writerow(table.headers)
                 for row in table.rows:
-                    writer.writerow([cell.value for cell in row.cells])
+                    writer.writerow([self.format_field(cell.value) for cell in row.cells])
 
         return output.getvalue()

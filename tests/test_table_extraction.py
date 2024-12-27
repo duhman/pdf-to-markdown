@@ -1,15 +1,16 @@
 """Tests for table extraction functionality."""
 
-import cv2
-import numpy as np
-import pytest
-from numpy.typing import NDArray
+import cv2  # type: ignore
+import numpy as np  # type: ignore
+import pytest  # type: ignore
+from numpy.typing import NDArray  # type: ignore
 
 from app.table_extractor import TableExtractor
 
 
 @pytest.fixture
 def extractor() -> TableExtractor:
+    """Create a table extractor instance."""
     return TableExtractor()
 
 
@@ -176,11 +177,16 @@ def test_noisy_image(extractor: TableExtractor, sample_table_image: NDArray[np.u
     assert isinstance(structure, list)
 
 
-def test_identify_column_types(
-    extractor: TableExtractor, sample_table_image: NDArray[np.uint8]
-) -> None:
+def test_identify_column_types(extractor: TableExtractor) -> None:
     """Test column type identification."""
-    structure = extractor.detect_table_structure(sample_table_image)
-    column_types = extractor.identify_column_types(structure)
-    assert isinstance(column_types, list)
-    assert all(isinstance(t, str) for t in column_types)
+    table_data = [
+        ["ID", "Name", "Age", "Salary"],
+        ["1", "John Doe", "30", "50000"],
+        ["2", "Jane Smith", "25", "60000"]
+    ]
+    column_types = extractor.identify_column_types(table_data)
+    assert len(column_types) == 4
+    assert column_types[0] == "numeric"  # ID column
+    assert column_types[1] == "text"     # Name column
+    assert column_types[2] == "numeric"  # Age column
+    assert column_types[3] == "numeric"  # Salary column

@@ -1,10 +1,12 @@
-import logging
-from typing import Dict
+"""Main FastAPI application."""
 
-import uvicorn
-from fastapi import BackgroundTasks, FastAPI, File, UploadFile
-from fastapi.exceptions import HTTPException
-from fastapi.middleware.cors import CORSMiddleware
+import logging
+from typing import Dict  # type: ignore
+
+import uvicorn  # type: ignore
+from fastapi import BackgroundTasks, FastAPI, File, UploadFile  # type: ignore
+from fastapi.exceptions import HTTPException  # type: ignore
+from fastapi.middleware.cors import CORSMiddleware  # type: ignore
 
 from app.markdown_generator import MarkdownGenerator
 from app.pdf_processor import PDFProcessor

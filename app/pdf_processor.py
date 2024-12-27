@@ -3,17 +3,17 @@
 import logging
 from typing import Union
 
-import langdetect
-import pytesseract
-from fastapi import HTTPException, UploadFile
-from pdf2image import convert_from_bytes
+import langdetect  # type: ignore
+import pytesseract  # type: ignore
+from fastapi import HTTPException, UploadFile  # type: ignore
+from pdf2image import convert_from_bytes  # type: ignore
 
 # Initialize logger
 logger = logging.getLogger(__name__)
 
 
 class PDFProcessor:
-    def __init__(self):
+    def __init__(self) -> None:
         # Configure tesseract to use English and Norwegian
         self.languages = {"en": "eng", "no": "nor"}
         self.ocr = pytesseract

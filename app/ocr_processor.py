@@ -1,16 +1,16 @@
 """OCR processor for extracting text from PDFs."""
 
 import re
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Any, Union, cast
 
-import cv2
-import numpy as np
-import pytesseract
-from pdf2image import convert_from_bytes
+import cv2  # type: ignore
+import numpy as np  # type: ignore
+import pytesseract  # type: ignore
+from pdf2image import convert_from_bytes  # type: ignore
 
 
 class OCRProcessor:
-    def __init__(self):
+    def __init__(self) -> None:
         self.languages = {"en": "eng", "no": "nor"}
         self.preprocessing_methods = {
             "default": self._default_preprocessing,
@@ -186,28 +186,131 @@ class OCRProcessor:
 
         return enhanced.strip()
 
-    def detect_layout(self, layout_info: List[Dict[str, int]]) -> Dict[str, List[Dict[str, int]]]:
+    def detect_layout(self, layout_info: List[Dict[str, Union[int, str]]]) -> Dict[str, List[Dict[str, Union[int, str]]]]:
         """Detect document layout sections."""
-        sections = {"header": [], "body": [], "footer": []}
+        sections: Dict[str, List[Dict[str, Union[int, str]]]] = {"header": [], "body": [], "footer": []}
 
         if not layout_info:
             return sections
 
         # Sort by vertical position
-        sorted_elements = sorted(layout_info, key=lambda x: x["top"])
-
-        # Find page boundaries
-        page_height = max(elem["top"] + elem["height"] for elem in layout_info)
-        header_boundary = page_height * 0.2
-        footer_boundary = page_height * 0.8
-
+        sorted_elements = sorted(layout_info, key=lambda x: cast(int, x["top"]))
+        
+        # Get page height
+        max_y = max(cast(int, elem["top"]) + cast(int, elem.get("height", 0)) for elem in layout_info)
+        
+        # Define section boundaries
+        header_height = float(max_y) * 0.2  # Top 20%
+        footer_start = float(max_y) * 0.8   # Bottom 20%
+        
         # Categorize elements
         for elem in sorted_elements:
-            if elem["top"] < header_boundary:
+            y = cast(int, elem["top"])
+            if float(y) < header_height:
                 sections["header"].append(elem)
-            elif elem["top"] > footer_boundary:
+            elif float(y) > footer_start:
                 sections["footer"].append(elem)
             else:
                 sections["body"].append(elem)
-
+        
         return sections
+
+    def detect_text_orientation(self, image: np.ndarray) -> float:
+        """Detect the orientation of text in the image."""
+        # Convert to grayscale
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        
+        # Apply edge detection
+        edges = cv2.Canny(gray, 50, 150, apertureSize=3)
+        
+        # Apply Hough transform
+        lines = cv2.HoughLines(edges, 1, np.pi/180, 100)
+        
+        if lines is not None:
+            angles: list[float] = []
+            for rho, theta in lines[:, 0]:
+                angle = float(theta * 180 / np.pi)  # Convert to float
+                # Normalize angle to -90 to 90 degrees
+                if angle > 90:
+                    angle = angle - 180
+                angles.append(angle)
+            
+            # Return median angle
+            if angles:
+                median_angle = float(np.median(angles))
+                return median_angle
+        
+        return 0.0
+
+    def process_image(self, image: np.ndarray, method: str = "default") -> str:
+        """Process an image and extract text using the specified preprocessing method."""
+        if method not in self.preprocessing_methods:
+            raise ValueError(f"Unknown preprocessing method: {method}")
+            
+        processed = self.preprocessing_methods[method](image)
+        text = pytesseract.image_to_string(processed)
+        return str(text)
+
+    def detect_text_regions(self, image: np.ndarray) -> List[Tuple[int, int, int, int]]:
+        """Detect regions containing text in the image."""
+        # Convert to grayscale
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        
+        # Apply thresholding
+        _, binary = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+        
+        # Find contours
+        contours, _ = cv2.findContours(binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        
+        # Get bounding rectangles for text regions
+        regions = []
+        for contour in contours:
+            x, y, w, h = cv2.boundingRect(contour)
+            # Filter out very small regions
+            if w > 20 and h > 20:
+                regions.append((x, y, w, h))
+                
+        return regions
+
+    def enhance_contrast(self, image: np.ndarray) -> np.ndarray:
+        """Enhance image contrast using histogram equalization."""
+        # Convert to LAB color space
+        lab = cv2.cvtColor(image, cv2.COLOR_BGR2LAB)
+        l, a, b = cv2.split(lab)
+        
+        # Apply CLAHE to L channel
+        clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8, 8))
+        cl = clahe.apply(l)
+        
+        # Merge channels
+        limg = cv2.merge((cl, a, b))
+        
+        # Convert back to BGR
+        return cv2.cvtColor(limg, cv2.COLOR_LAB2BGR)
+
+    def remove_noise(self, image: np.ndarray) -> np.ndarray:
+        """Remove noise from the image."""
+        # Convert to grayscale
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        
+        # Apply median blur
+        denoised = cv2.medianBlur(gray, 3)
+        
+        # Apply bilateral filter
+        return cv2.bilateralFilter(denoised, 9, 75, 75)
+
+    def deskew_image(self, image: np.ndarray) -> np.ndarray:
+        """Deskew the image based on detected text orientation."""
+        angle = self.detect_text_orientation(image)
+        
+        # Get image dimensions
+        height, width = image.shape[:2]
+        center = (width // 2, height // 2)
+        
+        # Create rotation matrix
+        matrix = cv2.getRotationMatrix2D(center, angle, 1.0)
+        
+        # Perform rotation
+        return cv2.warpAffine(image, matrix, (width, height), 
+                            flags=cv2.INTER_CUBIC, 
+                            borderMode=cv2.BORDER_REPLICATE)

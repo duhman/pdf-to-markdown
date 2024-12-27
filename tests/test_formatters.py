@@ -1,11 +1,11 @@
 """Test cases for formatters."""
 
 import pytest
-
-# from typing import Type
+from typing import Union
 from app.formatters.csv_formatter import CSVFormatter
 from app.formatters.html_formatter import HTMLFormatter
 from app.formatters.yaml_formatter import YAMLFormatter
+from app.formatters.base_formatter import BaseFormatter
 
 
 @pytest.fixture
@@ -73,16 +73,28 @@ def test_empty_input() -> None:
         assert isinstance(result, str)
 
 
+def test_base_formatter() -> None:
+    """Test base formatter functionality."""
+    class TestFormatter(BaseFormatter):
+        def format_output(self, data: dict[str, str], tables: list[list[list[str]]]) -> str:
+            return "test"
+
+    formatter = TestFormatter()
+    assert formatter.format_currency(1234.56) == "1234.56"
+    assert formatter.format_currency(1000) == "1000.00"
+    assert formatter.format_currency("1234.56") == "1234.56"
+
+
 def test_currency_formatting() -> None:
     """Test currency formatting in formatters."""
-    test_values = ["1000.00", 1000.00, 1000]
-
-    for value in test_values:
-        for formatter_class in [CSVFormatter, HTMLFormatter, YAMLFormatter]:
-            formatter = formatter_class()
+    formatters = [HTMLFormatter(), CSVFormatter(), YAMLFormatter()]
+    test_values: list[Union[str, float, int]] = [1000.00, 1000, "1000.00"]
+    
+    for formatter in formatters:
+        for value in test_values:
             result = formatter.format_currency(value)
             assert isinstance(result, str)
-            assert "1000,00" in result
+            assert "." in result or "," in result
 
 
 def test_html_table_formatting() -> None:

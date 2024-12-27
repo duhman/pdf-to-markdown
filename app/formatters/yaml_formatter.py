@@ -10,7 +10,7 @@ from app.formatters import BaseFormatter
 class YAMLFormatter(BaseFormatter):
     """Format data as YAML."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
     def format_output(self, data: Dict[str, Any], tables: Optional[List[Any]] = None) -> str:

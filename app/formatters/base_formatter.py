@@ -7,7 +7,7 @@ from typing import List, Union
 class BaseFormatter(ABC):
     """Abstract base class for formatters."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.data_formatter = self.format_currency
 
     @abstractmethod

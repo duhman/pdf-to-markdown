@@ -4,10 +4,10 @@ import asyncio
 from pathlib import Path
 from typing import AsyncGenerator, Generator
 
-import pytest
-from fastapi import FastAPI
-from fastapi.testclient import TestClient
-from httpx import AsyncClient
+import pytest  # type: ignore
+from fastapi import FastAPI  # type: ignore
+from fastapi.testclient import TestClient  # type: ignore
+from httpx import AsyncClient  # type: ignore
 
 from app.main import app
 from app.pdf_processor import PDFProcessor
@@ -103,7 +103,8 @@ async def test_large_pdf_processing(async_client: AsyncClient, tmp_path: Path) -
     assert "markdown" in response.json()
 
 
-def test_pdf_processor_error_handling(tmp_path: Path) -> None:
+@pytest.mark.asyncio
+async def test_pdf_processor_error_handling(tmp_path: Path) -> None:
     """Test PDF processor error handling."""
     processor = PDFProcessor()
     invalid_pdf = tmp_path / "invalid.pdf"
@@ -111,3 +112,19 @@ def test_pdf_processor_error_handling(tmp_path: Path) -> None:
 
     with pytest.raises(Exception):
         processor.process_pdf(str(invalid_pdf))
+
+
+@pytest.mark.asyncio
+async def test_pdf_to_markdown(async_client: AsyncClient, tmp_path: Path) -> None:
+    """Test PDF to Markdown conversion."""
+    # Create test PDF
+    test_pdf_path = tmp_path / "test.pdf"
+    test_pdf_path.write_bytes(b"%PDF-1.4\n")  # Minimal valid PDF
+
+    # Process PDF
+    with open(test_pdf_path, "rb") as f:
+        files = {"file": ("test.pdf", f, "application/pdf")}
+        response = await async_client.post("/process", files=files)
+
+    assert response.status_code == 200
+    assert "markdown" in response.json()

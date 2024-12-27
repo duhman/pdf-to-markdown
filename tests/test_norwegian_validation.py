@@ -52,10 +52,10 @@ def test_address_validation(validator: NorwegianValidator) -> None:
 
 def test_currency_formatting(validator: NorwegianValidator) -> None:
     """Test currency amount formatting."""
-    assert validator.format_currency("1234.56") == "1 234,56 kr"
-    assert validator.format_currency("1234") == "1 234,00 kr"
-    assert validator.format_currency("1234.5") == "1 234,50 kr"
-    assert validator.format_currency("1234.567") == "1 234,57 kr"  # Rounds to 2 decimals
+    assert validator.format_currency(1234.56) == "NOK 1 234,56"
+    assert validator.format_currency(1000000.00) == "NOK 1 000 000,00"
+    assert validator.format_currency(0.99) == "NOK 0,99"
+    assert validator.format_currency(1000) == "NOK 1 000,00"
 
 
 def test_phone_formatting(validator: NorwegianValidator) -> None:
