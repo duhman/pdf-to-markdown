@@ -10,6 +10,8 @@ A FastAPI application that converts PDF invoices to structured markdown document
 - Multi-language support (Norwegian and English)
 - Automatic language detection
 - RESTful API interface
+- Command-line batch conversion tool
+- Document type detection (Invoices, Declarations)
 
 ### Advanced Features
 
@@ -54,21 +56,37 @@ pip install -r requirements.txt
 
 ## Usage
 
+### Using the Web API
+
 1. Start the server:
 
 ```bash
 uvicorn app.main:app --reload
 ```
 
-2. Convert a PDF invoice:
+2. Convert a PDF invoice via API:
 
 ```bash
 curl -X POST "http://localhost:8000/convert" \
      -H "accept: application/json" \
      -H "Content-Type: multipart/form-data" \
      -F "file=@invoice.pdf" \
-     -F "output_format=markdown"  # or 'json' or 'xml'
+     -F "output_format=markdown"
 ```
+
+### Using the Command Line Script
+
+1. Place your PDF files in the `input_pdfs` directory
+2. Run the conversion script:
+
+```bash
+python3 convert_pdf.py
+```
+
+The script will automatically:
+- Process all PDF files in the `input_pdfs` directory
+- Create corresponding markdown files in `output_markdown` directory
+- Print status messages for each conversion
 
 Example response:
 
