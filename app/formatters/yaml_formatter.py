@@ -10,13 +10,14 @@ from app.formatters import BaseFormatter
 class YAMLFormatter(BaseFormatter):
     """Format data as YAML."""
 
+    def __init__(self):
+        super().__init__()
+
     def format_output(self, data: Dict[str, Any], tables: Optional[List[Any]] = None) -> str:
         """Format the data into YAML format."""
         output_data: Dict[str, Any] = {
             "invoice_details": {
-                "company_registration": self.data_formatter.format_field(
-                    "org_number", data.get("registration", "")
-                ),
+                "company_registration": data.get("registration", ""),
                 "invoice_number": data.get("invoice_number", ""),
                 "issue_date": data.get("issue_date", ""),
                 "due_date": data.get("due_date", ""),
@@ -27,7 +28,7 @@ class YAMLFormatter(BaseFormatter):
                 },
                 "payment": {
                     "bank_account": data.get("bank_account", ""),
-                    "reference": self.data_formatter.format_field("kid", data.get("reference", "")),
+                    "reference": data.get("reference", ""),
                 },
             }
         }

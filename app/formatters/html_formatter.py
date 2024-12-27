@@ -6,6 +6,9 @@ from app.formatters import BaseFormatter
 
 
 class HTMLFormatter(BaseFormatter):
+    def __init__(self):
+        super().__init__()
+
     """Format data as HTML."""
 
     def format_output(self, data: Dict[str, Any], tables: Optional[List[Any]] = None) -> str:

@@ -25,3 +25,4 @@ pytest-xdist>=3.5.0
 opencv-python>=4.8.1.78
 numpy>=1.26.2
 xmltodict>=0.13.0
+pyyaml>=6.0.1

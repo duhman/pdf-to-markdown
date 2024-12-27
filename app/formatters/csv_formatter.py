@@ -10,6 +10,9 @@ from app.formatters import BaseFormatter
 class CSVFormatter(BaseFormatter):
     """Format data as CSV."""
 
+    def __init__(self):
+        super().__init__()
+
     def format_output(self, data: Dict[str, Any], tables: Optional[List[Any]] = None) -> str:
         """Format the data into CSV format."""
         output = StringIO()

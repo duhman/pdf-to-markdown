@@ -20,3 +20,6 @@ asyncio_mode = "auto"
 testpaths = ["tests"]
 python_files = ["test_*.py"]
 addopts = "-v --cov=app --cov-report=xml --cov-report=term-missing"
+
+[project.dependencies]
+pyyaml = ">=6.0.1"

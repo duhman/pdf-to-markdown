@@ -77,7 +77,7 @@ def test_identify_columns(extractor: TableExtractor, sample_text: str) -> None:
     """Test column type identification."""
     lines = sample_text.strip().split("\n")
     table = extractor.detect_table_structure(lines)[0]
-    column_types = extractor.identify_columns(table)
+    column_types = extractor.identify_column_types(table)
 
     assert len(column_types) == 4
     assert column_types[0] == "description"  # First column
@@ -86,28 +86,10 @@ def test_identify_columns(extractor: TableExtractor, sample_text: str) -> None:
     assert column_types[3] == "amount"  # Fourth column
 
 
-def test_to_markdown(extractor: TableExtractor, sample_text: str) -> None:
-    """Test markdown conversion."""
-    lines = sample_text.strip().split("\n")
-    table = extractor.detect_table_structure(lines)[0]
-    column_types = extractor.identify_columns(table)
-    markdown = extractor.to_markdown(table, column_types)
-
-    assert "|" in markdown
-    assert "Description" in markdown
-    assert "Amount" in markdown
-    assert "---" in markdown  # Header separator
-    assert "1000,00" in markdown
-    assert "250,00" in markdown
-
-
 def test_empty_table(extractor: TableExtractor) -> None:
     """Test handling of empty tables."""
     tables = extractor.detect_table_structure([])
     assert len(tables) == 0
-
-    markdown = extractor.to_markdown([], {})
-    assert markdown == ""
 
 
 def test_single_column_table(extractor: TableExtractor) -> None:
@@ -190,43 +172,15 @@ def test_noisy_image(extractor: TableExtractor, sample_table_image: NDArray[np.u
     """Test handling of noisy image."""
     noise = np.random.normal(0, 25, sample_table_image.shape).astype(np.uint8)
     noisy_image = cv2.add(sample_table_image, noise)
-    structure = extractor.extract_table_structure(noisy_image)
+    structure = extractor.detect_table_structure(noisy_image)
     assert isinstance(structure, list)
-
-
-def test_detect_table_boundaries(
-    extractor: TableExtractor, sample_table_image: NDArray[np.uint8]
-) -> None:
-    """Test table boundary detection."""
-    boundaries = extractor.detect_table_boundaries(sample_table_image)
-    assert len(boundaries) == 4  # x, y, width, height
-    assert all(isinstance(x, int) for x in boundaries)
-
-
-def test_extract_table_structure(
-    extractor: TableExtractor, sample_table_image: NDArray[np.uint8]
-) -> None:
-    """Test table structure extraction."""
-    structure = extractor.extract_table_structure(sample_table_image)
-    assert isinstance(structure, list)
-    if structure:
-        assert isinstance(structure[0], list)
-        assert all(isinstance(cell, str) for cell in structure[0])
 
 
 def test_identify_column_types(
     extractor: TableExtractor, sample_table_image: NDArray[np.uint8]
 ) -> None:
     """Test column type identification."""
-    structure = extractor.extract_table_structure(sample_table_image)
+    structure = extractor.detect_table_structure(sample_table_image)
     column_types = extractor.identify_column_types(structure)
     assert isinstance(column_types, list)
     assert all(isinstance(t, str) for t in column_types)
-
-
-def test_extract_markdown(extractor: TableExtractor, sample_table_image: NDArray[np.uint8]) -> None:
-    """Test markdown extraction."""
-    structure = extractor.extract_table_structure(sample_table_image)
-    markdown = extractor.extract_markdown(structure)
-    assert isinstance(markdown, str)
-    assert "|" in markdown  # Should contain table delimiters

@@ -7,6 +7,9 @@ from typing import List, Union
 class BaseFormatter(ABC):
     """Abstract base class for formatters."""
 
+    def __init__(self):
+        self.data_formatter = self.format_currency
+
     @abstractmethod
     def format_output(self, data: dict[str, str], tables: list[list[list[str]]]) -> str:
         """Format the extracted data and tables.

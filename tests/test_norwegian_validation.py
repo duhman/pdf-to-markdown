@@ -1,7 +1,5 @@
-import pytest
-
 from app.validators import NorwegianValidator
-
+import pytest
 
 @pytest.fixture
 def validator() -> NorwegianValidator:
