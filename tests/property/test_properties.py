@@ -1,4 +1,5 @@
-import pytest
+"""Property-based tests for pdf-to-markdown."""
+
 from hypothesis import given
 from hypothesis import strategies as st
 
@@ -95,3 +96,12 @@ def test_vat_calculation_properties(invoice_number, amount, vat_rate):
     assert isinstance(result, str)
     assert str(float(amount)).rstrip("0").rstrip(".") in result
     assert str(float(vat_amount)).rstrip("0").rstrip(".") in result
+
+
+@given(st.text())
+def test_markdown_generation_property(text):
+    """Test that markdown generation works for any input text."""
+    generator = MarkdownGenerator()
+    result = generator.generate_markdown(text, "en")
+    assert isinstance(result, str)
+    assert len(result) >= 0

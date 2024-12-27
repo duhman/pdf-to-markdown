@@ -1,6 +1,5 @@
 """Tests for table extraction functionality."""
 
-
 import pytest
 
 from app.table_extractor import TableExtractor

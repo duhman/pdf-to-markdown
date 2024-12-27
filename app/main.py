@@ -4,7 +4,6 @@ import uvicorn
 from fastapi import BackgroundTasks, FastAPI, File, UploadFile
 from fastapi.exceptions import HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
 
 from app.markdown_generator import MarkdownGenerator
 from app.pdf_processor import PDFProcessor

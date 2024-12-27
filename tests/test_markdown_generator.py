@@ -1,9 +1,10 @@
-import pytest
+"""Test cases for markdown generation."""
 
 from app.markdown_generator import MarkdownGenerator
 
 
 def test_markdown_generator_initialization():
+    """Test markdown generator initialization."""
     generator = MarkdownGenerator()
     assert generator.invoice_keywords is not None
     assert "en" in generator.invoice_keywords
@@ -11,6 +12,7 @@ def test_markdown_generator_initialization():
 
 
 def test_generate_markdown_english():
+    """Test markdown generation in English."""
     generator = MarkdownGenerator()
     test_text = """
     Invoice #: INV-001
@@ -32,6 +34,7 @@ def test_generate_markdown_english():
 
 
 def test_generate_markdown_norwegian():
+    """Test markdown generation in Norwegian."""
     generator = MarkdownGenerator()
     test_text = """
     Fakturanummer: FAK-001
@@ -50,3 +53,12 @@ def test_generate_markdown_norwegian():
     assert "1000,00 kr" in markdown
     assert "## Tax" in markdown
     assert "250,00 kr" in markdown
+
+
+def test_generate_markdown():
+    """Test markdown generation."""
+    generator = MarkdownGenerator()
+    text = "Hello\nWorld"
+    markdown = generator.generate_markdown(text, "en")
+    assert "Hello" in markdown
+    assert "World" in markdown
