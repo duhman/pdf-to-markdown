@@ -19,10 +19,12 @@ class CSVFormatter(BaseFormatter):
 
         # Write company information
         if data.get("registration"):
-            writer.writerow([
-                "Company Registration",
-                self.data_formatter.format_field("org_number", data["registration"])
-            ])
+            writer.writerow(
+                [
+                    "Company Registration",
+                    self.data_formatter.format_field("org_number", data["registration"]),
+                ]
+            )
 
         # Write basic invoice information
         writer.writerow(["Invoice Number", data.get("invoice_number", "")])
@@ -40,10 +42,9 @@ class CSVFormatter(BaseFormatter):
         if data.get("bank_account"):
             writer.writerow(["Bank Account", data["bank_account"]])
         if data.get("reference"):
-            writer.writerow([
-                "Reference",
-                self.data_formatter.format_field("kid", data["reference"])
-            ])
+            writer.writerow(
+                ["Reference", self.data_formatter.format_field("kid", data["reference"])]
+            )
 
         # Add tables if present
         if tables:

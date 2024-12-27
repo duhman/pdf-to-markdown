@@ -24,9 +24,7 @@ class YAMLFormatter(BaseFormatter):
                 },
                 "payment": {
                     "bank_account": data.get("bank_account", ""),
-                    "reference": self.data_formatter.format_field(
-                        "kid", data.get("reference", "")
-                    ),
+                    "reference": self.data_formatter.format_field("kid", data.get("reference", "")),
                 },
             }
         }
@@ -36,10 +34,7 @@ class YAMLFormatter(BaseFormatter):
             for table in tables:
                 table_data = {
                     "headers": table.headers if table.headers else [],
-                    "rows": [
-                        [cell.value for cell in row.cells]
-                        for row in table.rows
-                    ]
+                    "rows": [[cell.value for cell in row.cells] for row in table.rows],
                 }
                 formatted_data["tables"].append(table_data)
 

@@ -8,7 +8,9 @@ class HTMLFormatter(BaseFormatter):
     def format_output(self, data: Dict[str, Any], tables: list = None) -> str:
         """Format the data into HTML format."""
         html = [
-            "<!DOCTYPE html>", "<html>", "<head>",
+            "<!DOCTYPE html>",
+            "<html>",
+            "<head>",
             "<title>Invoice Details</title>",
             "<style>",
             "body { font-family: Arial, sans-serif; margin: 20px; }",
@@ -16,14 +18,15 @@ class HTMLFormatter(BaseFormatter):
             "th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }",
             "th { background-color: #f2f2f2; }",
             "</style>",
-            "</head>", "<body>"
+            "</head>",
+            "<body>",
         ]
 
         # Company Information
         html.append("<h1>Invoice Details</h1>")
         if data.get("registration"):
             html.append("<h2>Company Registration</h2>")
-            reg_num = self.data_formatter.format_field('org_number', data['registration'])
+            reg_num = self.data_formatter.format_field("org_number", data["registration"])
             html.append(f"<p>{reg_num}</p>")
 
         # Basic Invoice Information
@@ -41,10 +44,10 @@ class HTMLFormatter(BaseFormatter):
         html.append("<table>")
         html.append("<tr><th>Field</th><th>Value</th></tr>")
         if data.get("total"):
-            total = self.format_currency(data['total'])
+            total = self.format_currency(data["total"])
             html.append(f"<tr><td>Total Amount</td><td>{total}</td></tr>")
         if data.get("tax"):
-            tax = self.format_currency(data['tax'])
+            tax = self.format_currency(data["tax"])
             html.append(f"<tr><td>Tax</td><td>{tax}</td></tr>")
         html.append("</table>")
 
@@ -55,7 +58,7 @@ class HTMLFormatter(BaseFormatter):
         if data.get("bank_account"):
             html.append(f"<tr><td>Bank Account</td><td>{data['bank_account']}</td></tr>")
         if data.get("reference"):
-            ref = self.data_formatter.format_field('kid', data['reference'])
+            ref = self.data_formatter.format_field("kid", data["reference"])
             html.append(f"<tr><td>Reference</td><td>{ref}</td></tr>")
         html.append("</table>")
 

@@ -67,10 +67,7 @@ class JSONFormatter(BaseFormatter):
         formatted_data = {
             "invoice_details": {
                 "company_registration": (
-                    self.data_formatter.format_field(
-                        "org_number",
-                        data.get("registration", "")
-                    )
+                    self.data_formatter.format_field("org_number", data.get("registration", ""))
                 ),
                 "invoice_number": data.get("invoice_number", ""),
                 "issue_date": data.get("issue_date", ""),
@@ -83,10 +80,7 @@ class JSONFormatter(BaseFormatter):
                 "payment": {
                     "bank_account": data.get("bank_account", ""),
                     "reference": (
-                        self.data_formatter.format_field(
-                            "kid",
-                            data.get("reference", "")
-                        )
+                        self.data_formatter.format_field("kid", data.get("reference", ""))
                     ),
                 },
             }
@@ -97,10 +91,7 @@ class JSONFormatter(BaseFormatter):
             for table in tables:
                 table_data = {
                     "headers": table.headers if table.headers else [],
-                    "rows": [
-                        [cell.value for cell in row.cells]
-                        for row in table.rows
-                    ]
+                    "rows": [[cell.value for cell in row.cells] for row in table.rows],
                 }
                 formatted_data["tables"].append(table_data)
 
