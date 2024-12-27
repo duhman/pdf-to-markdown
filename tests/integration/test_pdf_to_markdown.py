@@ -5,10 +5,12 @@ import io
 import os
 import tempfile
 from pathlib import Path
+
+import httpx
+from fastapi.testclient import TestClient
 from PIL import Image
 
 from app.pdf_processor import PDFProcessor
-from fastapi.testclient import TestClient
 
 
 def create_test_pdf(text: str, output_path: str):
@@ -62,8 +64,6 @@ def test_concurrent_requests(client: TestClient, tmp_path):
     """Test handling multiple concurrent requests."""
     pdf_path = os.path.join(tmp_path, "test.pdf")
     create_test_pdf("Test content", pdf_path)
-
-    import httpx
 
     async def make_request():
         async with httpx.AsyncClient(base_url="http://testserver") as ac:
